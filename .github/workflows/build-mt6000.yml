@@ -25,6 +25,8 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 360
+    permissions:
+      contents: write   # only used to publish run logs to the ci-logs branch
     steps:
       - name: Checkout this repo (diffconfig, patches, scripts)
         uses: actions/checkout@v4
@@ -80,7 +82,7 @@ jobs:
         working-directory: openwrt
         run: |
           set -o pipefail
-          make tools/install -j"$(nproc)" 2>&1 | tail -n 5
+          make tools/install -j"$(nproc)" 2>&1 | tee ../tools-install.log | tail -n 5
           make package/network/config/firewall4/download package/network/config/firewall4/prepare V=s 2>&1 | tee ../fw4-prepare.log | tail -n 20
           make target/linux/download target/linux/prepare V=s 2>&1 | tee ../kernel-prepare.log | tail -n 30
           if grep -E 'Hunk #[0-9]+ FAILED|can.t find file to patch|Patch failed|saving rejects' ../fw4-prepare.log ../kernel-prepare.log; then
@@ -131,7 +133,28 @@ jobs:
           name: dry-run-report
           path: |
             pre-check.log
+            tools-install.log
             fw4-prepare.log
             kernel-prepare.log
             openwrt/.config
           if-no-files-found: ignore
+
+      - name: Publish logs to branch ci-logs
+        if: ${{ always() }}
+        run: |
+          rm -rf /tmp/ci-logs && mkdir -p /tmp/ci-logs
+          for f in pre-check.log tools-install.log fw4-prepare.log kernel-prepare.log post-check.log; do
+            if [ -f "$f" ]; then tail -n 2000 "$f" > "/tmp/ci-logs/$f"; fi
+          done
+          if [ -d openwrt/logs ]; then
+            (cd openwrt && find logs -type f -name '*.txt' | head -n 60 | while read -r f; do
+              mkdir -p "/tmp/ci-logs/$(dirname "$f")"; tail -n 300 "$f" > "/tmp/ci-logs/$f"; done)
+          fi
+          echo "run ${{ github.run_id }} mode=${{ inputs.mode }} dry_run=${{ inputs.dry_run }}" > /tmp/ci-logs/RUN.txt
+          cd /tmp/ci-logs
+          git init -q -b ci-logs
+          git config user.email ci@example.com
+          git config user.name ci
+          git add -A
+          git commit -q -m "logs for run ${{ github.run_id }}"
+          git push -q --force "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" ci-logs:ci-logs
