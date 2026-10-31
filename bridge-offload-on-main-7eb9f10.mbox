@@ -1,0 +1,3968 @@
+From 9760d8cb0e13abe1715fa162b1ba06a06cb26f83 Mon Sep 17 00:00:00 2001
+From: Bohdan Chubuk <chbgdn@gmail.com>
+Date: Wed, 1 Jul 2026 06:02:15 +0300
+Subject: [PATCH 01/12] kernel: add kmod-nf-conntrack-bridge package
+
+Add package definition for bridge connection tracking module
+(CONFIG_NF_CONNTRACK_BRIDGE), which provides native bridge
+conntrack as a replacement for br_netfilter.
+
+Required for nft_flow_offload bridge fastpath support.
+
+Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+---
+ package/kernel/linux/modules/netfilter.mk | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/package/kernel/linux/modules/netfilter.mk b/package/kernel/linux/modules/netfilter.mk
+index debc2a5a..9c9c4161 100644
+--- a/package/kernel/linux/modules/netfilter.mk
++++ b/package/kernel/linux/modules/netfilter.mk
+@@ -1229,6 +1229,23 @@ endef
+ $(eval $(call KernelPackage,nfnetlink-cttimeout))
+ 
+ 
++define KernelPackage/nf-conntrack-bridge
++  SUBMENU:=$(NF_MENU)
++  TITLE:=IPv4/IPv6 bridge connection tracking support
++  DEPENDS:=+kmod-nf-conntrack
++  FILES:=$(LINUX_DIR)/net/bridge/netfilter/nf_conntrack_bridge.ko
++  KCONFIG:=CONFIG_NF_CONNTRACK_BRIDGE
++  AUTOLOAD:=$(call AutoProbe,nf_conntrack_bridge)
++endef
++
++define KernelPackage/nf-conntrack-bridge/description
++ Native bridge connection tracking, replacement for br_netfilter.
++ Required for nft_flow_offload bridge offload (bridge fastpath).
++endef
++
++$(eval $(call KernelPackage,nf-conntrack-bridge))
++
++
+ define KernelPackage/nf-conntrack-netlink
+   TITLE:=Connection tracking netlink interface
+   FILES:=$(LINUX_DIR)/net/netfilter/nf_conntrack_netlink.ko
+
+From 8aa94aa8efe1e29c617cfee5983de3b53ff8a068 Mon Sep 17 00:00:00 2001
+From: Bohdan Chubuk <chbgdn@gmail.com>
+Date: Wed, 1 Jul 2026 05:22:59 +0300
+Subject: [PATCH 02/12] generic: pending-6.18: add nft_flow_offload bridge
+ offload
+
+Backport Eric Woudstra bridge fastpath series adding nftables bridge
+family flowtable support for hardware offload of L2-forwarded traffic.
+
+Patches are based on commits from ericwoud/bpir-nftflow-nf-next-20260707.
+
+The series adds (675-01 through 675-12):
+- 675-01: nf_ip(6)_checksum(_partial) fix for data != network header
+- 675-02: bridge conntrack with double-VLAN and PPPoE encapsulation
+  tracking
+- 675-03: DEV_PATH_MTK_WDMA handling in nft_dev_path_info()
+- 675-04: DEV_PATH_BR_VLAN_KEEP_HW VLAN mode for switchdev offload
+- 675-05: port-to-port bridge forward path resolution
+- 675-06: dev_fill_bridge_path() for forward path walks from bridge
+  ports
+- 675-07: nf_flow_rule_bridge() for bridge hardware offload rules
+- 675-08: nf_flowtable_type flowtable_bridge
+- 675-09: nft_flow_offload_eval() thoff == 0 check
+- 675-10: NFPROTO_BRIDGE support in nft_flow_offload_validate()
+- 675-11: flow_offload_bridge_init() for bridge flow tuple setup
+- 675-12: bridge_fastpath.sh netfilter selftest
+
+The kmod-nf-conntrack-bridge package added alongside this series
+selects CONFIG_NF_CONNTRACK_BRIDGE via its KCONFIG entry, so no
+generic config change is needed.
+
+Co-authored-by: Eric Woudstra <ericwouds@gmail.com>
+Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+---
+ ...nf_ip-6-_checksum-_partial-correct-d.patch |  161 +++
+ ...-Add-conntrack-double-vlan-and-pppoe.patch |  373 ++++++
+ ...ow_offload-Add-DEV_PATH_MTK_WDMA-to-.patch |   44 +
+ ...e-Introduce-DEV_PATH_BR_VLAN_KEEP_HW.patch |  101 ++
+ ...lling-forward-path-from-port-to-port.patch |  105 ++
+ ...et-core-dev-Add-dev_fill_bridge_path.patch |  137 ++
+ ...w_table_offload-Add-nf_flow_rule_bri.patch |   60 +
+ ...w_table_inet-Add-nf_flowtable_type-f.patch |   63 +
+ ...ow_offload-nft_flow_offload_eval-che.patch |   48 +
+ ...ow_offload-Add-NFPROTO_BRIDGE-to-val.patch |   34 +
+ ...ow_offload-Add-bridgeflow-to-nft_flo.patch |  252 ++++
+ ...sts-netfilter-Add-bridge_fastpath.sh.patch | 1146 +++++++++++++++++
+ 12 files changed, 2524 insertions(+)
+ create mode 100644 target/linux/generic/pending-6.18/675-01-netfilter-utils-nf_ip-6-_checksum-_partial-correct-d.patch
+ create mode 100644 target/linux/generic/pending-6.18/675-02-netfilter-bridge-Add-conntrack-double-vlan-and-pppoe.patch
+ create mode 100644 target/linux/generic/pending-6.18/675-03-netfilter-nft_flow_offload-Add-DEV_PATH_MTK_WDMA-to-.patch
+ create mode 100644 target/linux/generic/pending-6.18/675-04-bridge-Introduce-DEV_PATH_BR_VLAN_KEEP_HW.patch
+ create mode 100644 target/linux/generic/pending-6.18/675-05-bridge-Add-filling-forward-path-from-port-to-port.patch
+ create mode 100644 target/linux/generic/pending-6.18/675-06-net-core-dev-Add-dev_fill_bridge_path.patch
+ create mode 100644 target/linux/generic/pending-6.18/675-07-netfilter-nf_flow_table_offload-Add-nf_flow_rule_bri.patch
+ create mode 100644 target/linux/generic/pending-6.18/675-08-netfilter-nf_flow_table_inet-Add-nf_flowtable_type-f.patch
+ create mode 100644 target/linux/generic/pending-6.18/675-09-netfilter-nft_flow_offload-nft_flow_offload_eval-che.patch
+ create mode 100644 target/linux/generic/pending-6.18/675-10-netfilter-nft_flow_offload-Add-NFPROTO_BRIDGE-to-val.patch
+ create mode 100644 target/linux/generic/pending-6.18/675-11-netfilter-nft_flow_offload-Add-bridgeflow-to-nft_flo.patch
+ create mode 100644 target/linux/generic/pending-6.18/675-12-selftests-netfilter-Add-bridge_fastpath.sh.patch
+
+diff --git a/target/linux/generic/pending-6.18/675-01-netfilter-utils-nf_ip-6-_checksum-_partial-correct-d.patch b/target/linux/generic/pending-6.18/675-01-netfilter-utils-nf_ip-6-_checksum-_partial-correct-d.patch
+new file mode 100644
+index 00000000..0ae22099
+--- /dev/null
++++ b/target/linux/generic/pending-6.18/675-01-netfilter-utils-nf_ip-6-_checksum-_partial-correct-d.patch
+@@ -0,0 +1,161 @@
++From 079b0bc02e30f3073fc07e03450438818a066aa6 Mon Sep 17 00:00:00 2001
++From: Eric Woudstra <ericwouds@gmail.com>
++Date: Wed, 1 Jul 2026 03:16:22 +0300
++Subject: [PATCH 01/14] netfilter: utils: nf_ip(6)_checksum(_partial) correct
++ data!=networkheader
++
++In the conntrack hook it may not always be the case that:
++skb_network_header(skb) == skb->data, i.e. skb_network_offset(skb)
++is zero.
++
++This is problematic when L4 function nf_conntrack_handle_packet(),
++nf_conntrack_icmpv4/6_error() and other functions alike are accessing L3
++data. These functions also calculate the checksum using
++nf_ip(6)_checksum() and nf_ip(6)_checksum_partial().
++
++They in turn use lower skb-checksum functions that are based on using
++skb->data and will fail when skb_network_offset(skb) is not zero.
++
++Adjust for skb_network_offset(skb), so that the checksum is calculated
++correctly.
++
++Based on commit 71117bbe4757 from ericwoud/bpir-nftflow-nf-next-20260707.
++
++Signed-off-by: Eric Woudstra <ericwouds@gmail.com>
++Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
++---
++ net/netfilter/utils.c | 52 ++++++++++++++++++++++++++++++++++++++-----
++ 1 file changed, 46 insertions(+), 6 deletions(-)
++
++diff --git a/net/netfilter/utils.c b/net/netfilter/utils.c
++index 008419db815a..ce3ac5af6a59 100644
++--- a/net/netfilter/utils.c
+++++ b/net/netfilter/utils.c
++@@ -10,9 +10,18 @@
++ __sum16 nf_ip_checksum(struct sk_buff *skb, unsigned int hook,
++ 		       unsigned int dataoff, u8 protocol)
++ {
+++	unsigned int nhpull = skb_network_offset(skb);
++ 	const struct iphdr *iph = ip_hdr(skb);
++ 	__sum16 csum = 0;
++ 
+++	if (WARN_ON_ONCE(!skb_pointer_if_linear(skb, nhpull, 0)))
+++		return 0;
+++
+++	/* pull/push because the lower csum functions assume that
+++	 * skb_network_offset(skb) is zero.
+++	 */
+++	dataoff -= nhpull;
+++	__skb_pull(skb, nhpull);
++ 	switch (skb->ip_summed) {
++ 	case CHECKSUM_COMPLETE:
++ 		if (hook != NF_INET_PRE_ROUTING && hook != NF_INET_LOCAL_IN)
++@@ -35,6 +44,7 @@ __sum16 nf_ip_checksum(struct sk_buff *skb, unsigned int hook,
++ 						       protocol, 0);
++ 		csum = __skb_checksum_complete(skb);
++ 	}
+++	__skb_push(skb, nhpull);
++ 	return csum;
++ }
++ EXPORT_SYMBOL(nf_ip_checksum);
++@@ -44,29 +54,47 @@ static __sum16 nf_ip_checksum_partial(struct sk_buff *skb, unsigned int hook,
++ 				      unsigned int dataoff, unsigned int len,
++ 				      u8 protocol)
++ {
+++	unsigned int nhpull = skb_network_offset(skb);
++ 	const struct iphdr *iph = ip_hdr(skb);
++ 	__sum16 csum = 0;
++ 
+++	if (WARN_ON_ONCE(!skb_pointer_if_linear(skb, nhpull, 0)))
+++		return 0;
+++
+++	/* See nf_ip_checksum() */
+++	dataoff -= nhpull;
+++	__skb_pull(skb, nhpull);
++ 	switch (skb->ip_summed) {
++ 	case CHECKSUM_COMPLETE:
++-		if (len == skb->len - dataoff)
++-			return nf_ip_checksum(skb, hook, dataoff, protocol);
+++		if (len == skb->len - dataoff) {
+++			csum = nf_ip_checksum(skb, hook, dataoff, protocol);
+++			break;
+++		}
++ 		fallthrough;
++ 	case CHECKSUM_NONE:
++ 		skb->csum = csum_tcpudp_nofold(iph->saddr, iph->daddr, protocol,
++ 					       skb->len - dataoff, 0);
++ 		skb->ip_summed = CHECKSUM_NONE;
++-		return __skb_checksum_complete_head(skb, dataoff + len);
+++		csum = __skb_checksum_complete_head(skb, dataoff + len);
+++		break;
++ 	}
+++	__skb_push(skb, nhpull);
++ 	return csum;
++ }
++ 
++ __sum16 nf_ip6_checksum(struct sk_buff *skb, unsigned int hook,
++ 			unsigned int dataoff, u8 protocol)
++ {
+++	unsigned int nhpull = skb_network_offset(skb);
++ 	const struct ipv6hdr *ip6h = ipv6_hdr(skb);
++ 	__sum16 csum = 0;
++ 
+++	if (WARN_ON_ONCE(!skb_pointer_if_linear(skb, nhpull, 0)))
+++		return 0;
+++
+++	/* See nf_ip_checksum() */
+++	dataoff -= nhpull;
+++	__skb_pull(skb, nhpull);
++ 	switch (skb->ip_summed) {
++ 	case CHECKSUM_COMPLETE:
++ 		if (hook != NF_INET_PRE_ROUTING && hook != NF_INET_LOCAL_IN)
++@@ -89,7 +117,9 @@ __sum16 nf_ip6_checksum(struct sk_buff *skb, unsigned int hook,
++ 						      skb_checksum(skb, 0,
++ 								   dataoff, 0))));
++ 		csum = __skb_checksum_complete(skb);
+++		break;
++ 	}
+++	__skb_push(skb, nhpull);
++ 	return csum;
++ }
++ EXPORT_SYMBOL(nf_ip6_checksum);
++@@ -98,14 +128,23 @@ static __sum16 nf_ip6_checksum_partial(struct sk_buff *skb, unsigned int hook,
++ 				       unsigned int dataoff, unsigned int len,
++ 				       u8 protocol)
++ {
+++	unsigned int nhpull = skb_network_offset(skb);
++ 	const struct ipv6hdr *ip6h = ipv6_hdr(skb);
++ 	__wsum hsum;
++ 	__sum16 csum = 0;
++ 
+++	if (WARN_ON_ONCE(!skb_pointer_if_linear(skb, nhpull, 0)))
+++		return 0;
+++
+++	/* See nf_ip_checksum() */
+++	dataoff -= nhpull;
+++	__skb_pull(skb, nhpull);
++ 	switch (skb->ip_summed) {
++ 	case CHECKSUM_COMPLETE:
++-		if (len == skb->len - dataoff)
++-			return nf_ip6_checksum(skb, hook, dataoff, protocol);
+++		if (len == skb->len - dataoff) {
+++			csum = nf_ip6_checksum(skb, hook, dataoff, protocol);
+++			break;
+++		}
++ 		fallthrough;
++ 	case CHECKSUM_NONE:
++ 		hsum = skb_checksum(skb, 0, dataoff, 0);
++@@ -115,8 +154,9 @@ static __sum16 nf_ip6_checksum_partial(struct sk_buff *skb, unsigned int hook,
++ 							 protocol,
++ 							 csum_sub(0, hsum)));
++ 		skb->ip_summed = CHECKSUM_NONE;
++-		return __skb_checksum_complete_head(skb, dataoff + len);
+++		csum = __skb_checksum_complete_head(skb, dataoff + len);
++ 	}
+++	__skb_push(skb, nhpull);
++ 	return csum;
++ };
++ 
++-- 
++2.55.0
++
+diff --git a/target/linux/generic/pending-6.18/675-02-netfilter-bridge-Add-conntrack-double-vlan-and-pppoe.patch b/target/linux/generic/pending-6.18/675-02-netfilter-bridge-Add-conntrack-double-vlan-and-pppoe.patch
+new file mode 100644
+index 00000000..75572611
+--- /dev/null
++++ b/target/linux/generic/pending-6.18/675-02-netfilter-bridge-Add-conntrack-double-vlan-and-pppoe.patch
+@@ -0,0 +1,373 @@
++From 5c1edae57350da1cae8817038051f33aa9f5735e Mon Sep 17 00:00:00 2001
++From: Eric Woudstra <ericwouds@gmail.com>
++Date: Wed, 1 Jul 2026 03:17:30 +0300
++Subject: [PATCH 02/14] netfilter: bridge: Add conntrack double vlan and pppoe
++
++In a bridge, until now, it is possible to track connections of plain
++ip(v6) and ip(v6) encapsulated in single 802.1q or 802.1ad.
++
++This patch adds the capability to track connections when the connection
++is (also) encapsulated in PPPoE. It also adds the capability to track
++connections that are encapsulated in an inner 802.1q, combined with an
++outer 802.1ad or 802.1q encapsulation.
++
++To prevent mixing connections that are tagged differently in the L2
++encapsulations, one should separate them using conntrack zones.
++Using a conntrack zone is a hard requirement for the newly added
++encapsulations of the tracking capability inside a bridge.
++
++Also handling of de-/re-fragmenting is patched accordingly.
++
++Based on commit bf8ce0c0bf10 from ericwoud/bpir-nftflow-nf-next-20260707.
++
++Signed-off-by: Eric Woudstra <ericwouds@gmail.com>
++Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
++---
++ include/linux/netfilter_bridge.h           |   6 +
++ net/bridge/netfilter/nf_conntrack_bridge.c | 203 ++++++++++++++++++---
++ 2 files changed, 182 insertions(+), 27 deletions(-)
++
++diff --git a/include/linux/netfilter_bridge.h b/include/linux/netfilter_bridge.h
++index 743475ca7e9d..51e80b14fe3f 100644
++--- a/include/linux/netfilter_bridge.h
+++++ b/include/linux/netfilter_bridge.h
++@@ -10,6 +10,12 @@ struct nf_bridge_frag_data {
++ 	bool    vlan_present;
++ 	u16     vlan_tci;
++ 	__be16  vlan_proto;
+++	bool    inner_vlan_present;
+++	u16     inner_vlan_tci;
+++	__be16  inner_vlan_proto;
+++	bool    pppoe_present;
+++	__be16  pppoe_sid;
+++	__be16  pppoe_proto;
++ };
++ 
++ #if IS_ENABLED(CONFIG_BRIDGE_NETFILTER)
++diff --git a/net/bridge/netfilter/nf_conntrack_bridge.c b/net/bridge/netfilter/nf_conntrack_bridge.c
++index 6482de4d8750..c9df82627669 100644
++--- a/net/bridge/netfilter/nf_conntrack_bridge.c
+++++ b/net/bridge/netfilter/nf_conntrack_bridge.c
++@@ -16,6 +16,7 @@
++ #include <net/netfilter/nf_conntrack_helper.h>
++ #include <net/netfilter/nf_conntrack_bridge.h>
++ 
+++#include <linux/ppp_defs.h>
++ #include <linux/netfilter/nf_tables.h>
++ #include <net/netfilter/nf_tables.h>
++ 
++@@ -143,7 +144,8 @@ static void br_skb_cb_restore(struct sk_buff *skb,
++ }
++ 
++ static unsigned int nf_ct_br_defrag4(struct sk_buff *skb,
++-				     const struct nf_hook_state *state)
+++				     const struct nf_hook_state *state,
+++				     int offset)
++ {
++ 	u16 zone_id = NF_CT_DEFAULT_ZONE_ID;
++ 	enum ip_conntrack_info ctinfo;
++@@ -154,6 +156,9 @@ static unsigned int nf_ct_br_defrag4(struct sk_buff *skb,
++ 	if (!ip_is_fragment(ip_hdr(skb)))
++ 		return NF_ACCEPT;
++ 
+++	if (offset)
+++		__skb_pull(skb, offset);
+++
++ 	ct = nf_ct_get(skb, &ctinfo);
++ 	if (ct)
++ 		zone_id = nf_ct_zone_id(nf_ct_zone(ct), CTINFO2DIR(ctinfo));
++@@ -166,6 +171,8 @@ static unsigned int nf_ct_br_defrag4(struct sk_buff *skb,
++ 	if (!err) {
++ 		br_skb_cb_restore(skb, &cb, IPCB(skb)->frag_max_size);
++ 		skb->ignore_df = 1;
+++		if (offset)
+++			__skb_push(skb, offset);
++ 		return NF_ACCEPT;
++ 	}
++ 
++@@ -173,7 +180,8 @@ static unsigned int nf_ct_br_defrag4(struct sk_buff *skb,
++ }
++ 
++ static unsigned int nf_ct_br_defrag6(struct sk_buff *skb,
++-				     const struct nf_hook_state *state)
+++				     const struct nf_hook_state *state,
+++				     int offset)
++ {
++ #if IS_ENABLED(CONFIG_NF_DEFRAG_IPV6)
++ 	u16 zone_id = NF_CT_DEFAULT_ZONE_ID;
++@@ -182,6 +190,9 @@ static unsigned int nf_ct_br_defrag6(struct sk_buff *skb,
++ 	const struct nf_conn *ct;
++ 	int err;
++ 
+++	if (offset)
+++		__skb_pull(skb, offset);
+++
++ 	ct = nf_ct_get(skb, &ctinfo);
++ 	if (ct)
++ 		zone_id = nf_ct_zone_id(nf_ct_zone(ct), CTINFO2DIR(ctinfo));
++@@ -195,7 +206,12 @@ static unsigned int nf_ct_br_defrag6(struct sk_buff *skb,
++ 		return NF_STOLEN;
++ 
++ 	br_skb_cb_restore(skb, &cb, IP6CB(skb)->frag_max_size);
++-	return err == 0 ? NF_ACCEPT : NF_DROP;
+++	if (err)
+++		return NF_DROP;
+++
+++	if (offset)
+++		__skb_push(skb, offset);
+++	return NF_ACCEPT;
++ #else
++ 	return NF_ACCEPT;
++ #endif
++@@ -237,59 +253,140 @@ static int nf_ct_br_ipv6_check(const struct sk_buff *skb)
++ 	return 0;
++ }
++ 
+++static int nf_ct_bridge_inner(struct sk_buff *skb, __be16 *proto, u32 *len,
+++			      struct nf_bridge_frag_data *data)
+++{
+++	if (data) {
+++		data->inner_vlan_present = false;
+++		data->pppoe_present = false;
+++	}
+++
+++	switch (*proto) {
+++	case htons(ETH_P_PPP_SES): {
+++		struct ppp_hdr {
+++			struct pppoe_hdr hdr;
+++			__be16 proto;
+++		} *ph;
+++
+++		if (!pskb_may_pull(skb, PPPOE_SES_HLEN))
+++			return -1;
+++		ph = (struct ppp_hdr *)(skb->data);
+++		switch (ph->proto) {
+++		case htons(PPP_IP):
+++			*proto = htons(ETH_P_IP);
+++			if (len)
+++				*len = ntohs(ph->hdr.length) - 2;
+++			if (data) {
+++				data->pppoe_present = true;
+++				data->pppoe_sid = ph->hdr.sid;
+++				data->pppoe_proto = ph->proto;
+++			}
+++			skb_set_network_header(skb, PPPOE_SES_HLEN);
+++			return PPPOE_SES_HLEN;
+++		case htons(PPP_IPV6):
+++			*proto = htons(ETH_P_IPV6);
+++			if (len)
+++				*len = ntohs(ph->hdr.length) - 2;
+++			if (data) {
+++				data->pppoe_present = true;
+++				data->pppoe_sid = ph->hdr.sid;
+++				data->pppoe_proto = ph->proto;
+++			}
+++			skb_set_network_header(skb, PPPOE_SES_HLEN);
+++			return PPPOE_SES_HLEN;
+++		}
+++		break;
+++	}
+++	case htons(ETH_P_8021Q): {
+++		struct vlan_hdr *vhdr;
+++
+++		if (!pskb_may_pull(skb, VLAN_HLEN))
+++			return -1;
+++		vhdr = (struct vlan_hdr *)(skb->data);
+++		*proto = vhdr->h_vlan_encapsulated_proto;
+++		if (data) {
+++			data->inner_vlan_present = true;
+++			data->inner_vlan_tci = vhdr->h_vlan_TCI;
+++			data->inner_vlan_proto = vhdr->h_vlan_encapsulated_proto;
+++		}
+++		skb_set_network_header(skb, VLAN_HLEN);
+++		return VLAN_HLEN;
+++	}
+++	}
+++	return 0;
+++}
+++
++ static unsigned int nf_ct_bridge_pre(void *priv, struct sk_buff *skb,
++ 				     const struct nf_hook_state *state)
++ {
++ 	struct nf_hook_state bridge_state = *state;
+++	int ret = NF_ACCEPT, offset = 0;
++ 	enum ip_conntrack_info ctinfo;
+++	u32 len, pppoe_len = 0;
++ 	struct nf_conn *ct;
++-	u32 len;
++-	int ret;
+++	__be16 proto;
++ 
++ 	ct = nf_ct_get(skb, &ctinfo);
++ 	if ((ct && !nf_ct_is_template(ct)) ||
++ 	    ctinfo == IP_CT_UNTRACKED)
++ 		return NF_ACCEPT;
++ 
++-	switch (skb->protocol) {
++-	case htons(ETH_P_IP):
++-		if (!pskb_may_pull(skb, sizeof(struct iphdr)))
+++	proto = skb->protocol;
+++
+++	if (ct && nf_ct_zone_id(nf_ct_zone(ct), CTINFO2DIR(ctinfo)) !=
+++			NF_CT_DEFAULT_ZONE_ID) {
+++		offset = nf_ct_bridge_inner(skb, &proto, &pppoe_len, NULL);
+++		if (offset < 0)
++ 			return NF_ACCEPT;
+++	}
+++
+++	switch (proto) {
+++	case htons(ETH_P_IP):
+++		if (!pskb_may_pull(skb, offset + sizeof(struct iphdr)))
+++			goto do_not_track;
++ 
++ 		len = skb_ip_totlen(skb);
++-		if (pskb_trim_rcsum(skb, len))
++-			return NF_ACCEPT;
+++		if (pppoe_len && pppoe_len != len)
+++			goto do_not_track;
+++		if (pskb_trim_rcsum(skb, offset + len))
+++			goto do_not_track;
++ 
++ 		if (nf_ct_br_ip_check(skb))
++-			return NF_ACCEPT;
+++			goto do_not_track;
++ 
++ 		bridge_state.pf = NFPROTO_IPV4;
++-		ret = nf_ct_br_defrag4(skb, &bridge_state);
+++		ret = nf_ct_br_defrag4(skb, &bridge_state, offset);
++ 		break;
++ 	case htons(ETH_P_IPV6):
++-		if (!pskb_may_pull(skb, sizeof(struct ipv6hdr)))
++-			return NF_ACCEPT;
+++		if (!pskb_may_pull(skb, offset + sizeof(struct ipv6hdr)))
+++			goto do_not_track;
++ 
++ 		len = sizeof(struct ipv6hdr) + ntohs(ipv6_hdr(skb)->payload_len);
++-		if (pskb_trim_rcsum(skb, len))
++-			return NF_ACCEPT;
+++		if (pppoe_len && pppoe_len != len)
+++			goto do_not_track;
+++		if (pskb_trim_rcsum(skb, offset + len))
+++			goto do_not_track;
++ 
++ 		if (nf_ct_br_ipv6_check(skb))
++-			return NF_ACCEPT;
+++			goto do_not_track;
++ 
++ 		bridge_state.pf = NFPROTO_IPV6;
++-		ret = nf_ct_br_defrag6(skb, &bridge_state);
+++		ret = nf_ct_br_defrag6(skb, &bridge_state, offset);
++ 		break;
++ 	default:
++ 		nf_reset_ct(skb);
++ 		nf_ct_set(skb, NULL, IP_CT_UNTRACKED);
++-		return NF_ACCEPT;
+++		goto do_not_track;
++ 	}
++ 
++-	if (ret != NF_ACCEPT)
++-		return ret;
+++	if (ret == NF_ACCEPT)
+++		ret = nf_conntrack_in(skb, &bridge_state);
++ 
++-	return nf_conntrack_in(skb, &bridge_state);
+++do_not_track:
+++	if (offset && ret == NF_ACCEPT)
+++		skb_reset_network_header(skb);
+++
+++	return ret;
++ }
++ 
++ static unsigned int nf_ct_bridge_in(void *priv, struct sk_buff *skb,
++@@ -341,12 +438,22 @@ nf_ct_bridge_refrag(struct sk_buff *skb, const struct nf_hook_state *state,
++ 				  struct sk_buff *))
++ {
++ 	struct nf_bridge_frag_data data;
+++	__be16 proto;
+++	int offset;
++ 
++ 	if (!BR_INPUT_SKB_CB(skb)->frag_max_size)
++ 		return NF_ACCEPT;
++ 
++ 	nf_ct_bridge_frag_save(skb, &data);
++-	switch (skb->protocol) {
+++
+++	proto = skb->protocol;
+++
+++	offset = nf_ct_bridge_inner(skb, &proto, NULL, &data);
+++	if (offset < 0)
+++		return NF_ACCEPT;
+++	__skb_pull(skb, offset);
+++
+++	switch (proto) {
++ 	case htons(ETH_P_IP):
++ 		nf_br_ip_fragment(state->net, state->sk, skb, &data, output);
++ 		break;
++@@ -367,11 +474,49 @@ static int nf_ct_bridge_frag_restore(struct sk_buff *skb,
++ {
++ 	int err;
++ 
++-	err = skb_cow_head(skb, ETH_HLEN);
++-	if (err) {
++-		kfree_skb(skb);
++-		return -ENOMEM;
+++	if (data->pppoe_present) {
+++		struct ppp_hdr {
+++			struct pppoe_hdr hdr;
+++			__be16 proto;
+++		} *ph;
+++
+++		err = skb_cow_head(skb, PPPOE_SES_HLEN);
+++		if (err)
+++			goto error;
+++
+++		__skb_push(skb, PPPOE_SES_HLEN);
+++		skb_reset_network_header(skb);
+++		skb->protocol = htons(ETH_P_PPP_SES);
+++
+++		ph = (struct ppp_hdr *)(skb->data);
+++		ph->hdr.ver  = 1;
+++		ph->hdr.type = 1;
+++		ph->hdr.code = 0;
+++		ph->hdr.sid  = data->pppoe_sid;
+++		ph->hdr.length = htons(skb->len + 2 - PPPOE_SES_HLEN);
+++		ph->proto = data->pppoe_proto;
++ 	}
+++
+++	if (data->inner_vlan_present) {
+++		struct vlan_hdr *vhdr;
+++
+++		err = skb_cow_head(skb, VLAN_HLEN);
+++		if (err)
+++			goto error;
+++
+++		__skb_push(skb, VLAN_HLEN);
+++		skb_reset_network_header(skb);
+++		skb->protocol = htons(ETH_P_8021Q);
+++
+++		vhdr = (struct vlan_hdr *)(skb->data);
+++		vhdr->h_vlan_TCI = data->inner_vlan_tci;
+++		vhdr->h_vlan_encapsulated_proto = data->inner_vlan_proto;
+++	}
+++
+++	err = skb_cow_head(skb, ETH_HLEN);
+++	if (err)
+++		goto error;
+++
++ 	if (data->vlan_present)
++ 		__vlan_hwaccel_put_tag(skb, data->vlan_proto, data->vlan_tci);
++ 	else if (skb_vlan_tag_present(skb))
++@@ -381,6 +526,10 @@ static int nf_ct_bridge_frag_restore(struct sk_buff *skb,
++ 	skb_reset_mac_header(skb);
++ 
++ 	return 0;
+++
+++error:
+++	kfree_skb(skb);
+++	return -ENOMEM;
++ }
++ 
++ static int nf_ct_bridge_refrag_post(struct net *net, struct sock *sk,
++-- 
++2.55.0
++
+diff --git a/target/linux/generic/pending-6.18/675-03-netfilter-nft_flow_offload-Add-DEV_PATH_MTK_WDMA-to-.patch b/target/linux/generic/pending-6.18/675-03-netfilter-nft_flow_offload-Add-DEV_PATH_MTK_WDMA-to-.patch
+new file mode 100644
+index 00000000..19ee3328
+--- /dev/null
++++ b/target/linux/generic/pending-6.18/675-03-netfilter-nft_flow_offload-Add-DEV_PATH_MTK_WDMA-to-.patch
+@@ -0,0 +1,44 @@
++From 6d1de6942e87272e8836c1398a291d4c77faec56 Mon Sep 17 00:00:00 2001
++From: Bohdan Chubuk <chbgdn@gmail.com>
++Date: Sun, 26 Jul 2026 01:20:24 +0300
++Subject: [PATCH 03/14] netfilter: nft_flow_offload: Add DEV_PATH_MTK_WDMA to
++ nft_dev_path_info()
++
++MediaTek uses the path type DEV_PATH_MTK_WDMA in path discovery.
++When this path type is encountered, it should be handled similarly
++to DSA: stop iterating through the device path stack.
++
++Based on commit ad3380141cf7 from ericwoud/bpir-nftflow-nf-next-20260707.
++
++Co-authored-by: Eric Woudstra <ericwouds@gmail.com>
++Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
++---
++ net/netfilter/nf_flow_table_path.c | 5 +++++
++ 1 file changed, 5 insertions(+)
++
++diff --git a/net/netfilter/nf_flow_table_path.c b/net/netfilter/nf_flow_table_path.c
++index 76d4ff145439..a452d6591b4f 100644
++--- a/net/netfilter/nf_flow_table_path.c
+++++ b/net/netfilter/nf_flow_table_path.c
++@@ -103,6 +103,7 @@ static void nft_dev_path_info(const struct net_device_path_stack *stack,
++ 		switch (path->type) {
++ 		case DEV_PATH_ETHERNET:
++ 		case DEV_PATH_DSA:
+++		case DEV_PATH_MTK_WDMA:
++ 		case DEV_PATH_VLAN:
++ 		case DEV_PATH_PPPOE:
++ 			info->indev = path->dev;
++@@ -115,6 +116,10 @@ static void nft_dev_path_info(const struct net_device_path_stack *stack,
++ 				i = stack->num_paths;
++ 				break;
++ 			}
+++			if (path->type == DEV_PATH_MTK_WDMA) {
+++				i = stack->num_paths;
+++				break;
+++			}
++ 
++ 			/* DEV_PATH_VLAN and DEV_PATH_PPPOE */
++ 			if (info->num_encaps >= NF_FLOW_TABLE_ENCAP_MAX) {
++-- 
++2.55.0
++
+diff --git a/target/linux/generic/pending-6.18/675-04-bridge-Introduce-DEV_PATH_BR_VLAN_KEEP_HW.patch b/target/linux/generic/pending-6.18/675-04-bridge-Introduce-DEV_PATH_BR_VLAN_KEEP_HW.patch
+new file mode 100644
+index 00000000..67c066c5
+--- /dev/null
++++ b/target/linux/generic/pending-6.18/675-04-bridge-Introduce-DEV_PATH_BR_VLAN_KEEP_HW.patch
+@@ -0,0 +1,101 @@
++From 26c22270c2d163be15a12ba1a4ae4a8205068e49 Mon Sep 17 00:00:00 2001
++From: Bohdan Chubuk <chbgdn@gmail.com>
++Date: Sun, 26 Jul 2026 01:21:06 +0300
++Subject: [PATCH 04/14] bridge: Introduce DEV_PATH_BR_VLAN_KEEP_HW
++
++Add a new VLAN mode DEV_PATH_BR_VLAN_KEEP_HW for bridge path discovery.
++When a VLAN is added by switchdev and the path mode is DEV_PATH_BR_VLAN_TAG,
++keep the VLAN tag in the fastpath but also enable hardware offload by
++adding it to the encap info.
++
++Based on commit c041a5d02364 from ericwoud/bpir-nftflow-nf-next-20260707.
++
++Check the encap bound before recording ingress_vlans, mirroring the
++DEV_PATH_BR_VLAN_TAG case, so a full encap stack cannot leave a stale
++bit behind on the overflow path.
++
++Co-authored-by: Eric Woudstra <ericwouds@gmail.com>
++Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
++---
++ include/linux/netdevice.h          |  1 +
++ net/bridge/br_device.c             |  1 +
++ net/bridge/br_vlan.c               | 17 +++++++++++------
++ net/netfilter/nf_flow_table_path.c | 10 ++++++++++
++ 4 files changed, 23 insertions(+), 6 deletions(-)
++
++diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
++index 43ea96ecedc3..aba9d7dfe170 100644
++--- a/include/linux/netdevice.h
+++++ b/include/linux/netdevice.h
++@@ -893,6 +893,7 @@ struct net_device_path {
++ 				DEV_PATH_BR_VLAN_TAG,
++ 				DEV_PATH_BR_VLAN_UNTAG,
++ 				DEV_PATH_BR_VLAN_UNTAG_HW,
+++				DEV_PATH_BR_VLAN_KEEP_HW,
++ 			}		vlan_mode;
++ 			u16		vlan_id;
++ 			__be16		vlan_proto;
++diff --git a/net/bridge/br_device.c b/net/bridge/br_device.c
++index 525d4eccd194..da28125746d5 100644
++--- a/net/bridge/br_device.c
+++++ b/net/bridge/br_device.c
++@@ -423,6 +423,7 @@ static int br_fill_forward_path(struct net_device_path_ctx *ctx,
++ 	case DEV_PATH_BR_VLAN_UNTAG:
++ 		ctx->num_vlans--;
++ 		break;
+++	case DEV_PATH_BR_VLAN_KEEP_HW:
++ 	case DEV_PATH_BR_VLAN_KEEP:
++ 		break;
++ 	}
++diff --git a/net/bridge/br_vlan.c b/net/bridge/br_vlan.c
++index ce72b837ff8e..29f947b8c54f 100644
++--- a/net/bridge/br_vlan.c
+++++ b/net/bridge/br_vlan.c
++@@ -1489,12 +1489,17 @@ int br_vlan_fill_forward_path_mode(struct net_bridge *br,
++ 	if (!(v->flags & BRIDGE_VLAN_INFO_UNTAGGED))
++ 		return 0;
++ 
++-	if (path->bridge.vlan_mode == DEV_PATH_BR_VLAN_TAG)
++-		path->bridge.vlan_mode = DEV_PATH_BR_VLAN_KEEP;
++-	else if (v->priv_flags & BR_VLFLAG_ADDED_BY_SWITCHDEV)
++-		path->bridge.vlan_mode = DEV_PATH_BR_VLAN_UNTAG_HW;
++-	else
++-		path->bridge.vlan_mode = DEV_PATH_BR_VLAN_UNTAG;
+++	if (path->bridge.vlan_mode == DEV_PATH_BR_VLAN_TAG) {
+++		if (v->priv_flags & BR_VLFLAG_ADDED_BY_SWITCHDEV)
+++			path->bridge.vlan_mode = DEV_PATH_BR_VLAN_KEEP_HW;
+++		else
+++			path->bridge.vlan_mode = DEV_PATH_BR_VLAN_KEEP;
+++	} else {
+++		if (v->priv_flags & BR_VLFLAG_ADDED_BY_SWITCHDEV)
+++			path->bridge.vlan_mode = DEV_PATH_BR_VLAN_UNTAG_HW;
+++		else
+++			path->bridge.vlan_mode = DEV_PATH_BR_VLAN_UNTAG;
+++	}
++ 
++ 	return 0;
++ }
++diff --git a/net/netfilter/nf_flow_table_path.c b/net/netfilter/nf_flow_table_path.c
++index a452d6591b4f..77d0899320dc 100644
++--- a/net/netfilter/nf_flow_table_path.c
+++++ b/net/netfilter/nf_flow_table_path.c
++@@ -142,6 +142,16 @@ static void nft_dev_path_info(const struct net_device_path_stack *stack,
++ 			case DEV_PATH_BR_VLAN_UNTAG_HW:
++ 				info->ingress_vlans |= BIT(info->num_encaps - 1);
++ 				break;
+++			case DEV_PATH_BR_VLAN_KEEP_HW:
+++				if (info->num_encaps >= NF_FLOW_TABLE_ENCAP_MAX) {
+++					info->indev = NULL;
+++					break;
+++				}
+++				info->ingress_vlans |= BIT(info->num_encaps);
+++				info->encap[info->num_encaps].id = path->bridge.vlan_id;
+++				info->encap[info->num_encaps].proto = path->bridge.vlan_proto;
+++				info->num_encaps++;
+++				break;
++ 			case DEV_PATH_BR_VLAN_TAG:
++ 				if (info->num_encaps >= NF_FLOW_TABLE_ENCAP_MAX) {
++ 					info->indev = NULL;
++-- 
++2.55.0
++
+diff --git a/target/linux/generic/pending-6.18/675-05-bridge-Add-filling-forward-path-from-port-to-port.patch b/target/linux/generic/pending-6.18/675-05-bridge-Add-filling-forward-path-from-port-to-port.patch
+new file mode 100644
+index 00000000..8946b6cd
+--- /dev/null
++++ b/target/linux/generic/pending-6.18/675-05-bridge-Add-filling-forward-path-from-port-to-port.patch
+@@ -0,0 +1,105 @@
++From c30deb4a73e1e8a0961e17010aa0d42e9b906adc Mon Sep 17 00:00:00 2001
++From: Eric Woudstra <ericwouds@gmail.com>
++Date: Wed, 1 Jul 2026 03:18:39 +0300
++Subject: [PATCH 05/14] bridge: Add filling forward path from port to port
++
++If a port is passed as argument instead of the master, then:
++
++At br_fill_forward_path(): find the master and use it to fill the
++forward path.
++
++At br_vlan_fill_forward_path_pvid(): lookup vlan group from port
++instead.
++
++Based on commit 640f342b44f0 from ericwoud/bpir-nftflow-nf-next-20260707.
++
++Signed-off-by: Eric Woudstra <ericwouds@gmail.com>
++Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
++---
++ net/bridge/br_device.c  | 19 ++++++++++++++-----
++ net/bridge/br_private.h |  2 ++
++ net/bridge/br_vlan.c    |  6 +++++-
++ 3 files changed, 21 insertions(+), 6 deletions(-)
++
++diff --git a/net/bridge/br_device.c b/net/bridge/br_device.c
++index da28125746d5..07110dc66705 100644
++--- a/net/bridge/br_device.c
+++++ b/net/bridge/br_device.c
++@@ -385,16 +385,25 @@ static int br_del_slave(struct net_device *dev, struct net_device *slave_dev)
++ static int br_fill_forward_path(struct net_device_path_ctx *ctx,
++ 				struct net_device_path *path)
++ {
+++	struct net_bridge_port *src, *dst;
++ 	struct net_bridge_fdb_entry *f;
++-	struct net_bridge_port *dst;
++ 	struct net_bridge *br;
++ 
++-	if (netif_is_bridge_port(ctx->dev))
++-		return -1;
+++	if (netif_is_bridge_port(ctx->dev)) {
+++		struct net_device *br_dev;
+++
+++		br_dev = netdev_master_upper_dev_get_rcu((struct net_device *)ctx->dev);
+++		if (!br_dev)
+++			return -1;
++ 
++-	br = netdev_priv(ctx->dev);
+++		src = br_port_get_rcu(ctx->dev);
+++		br = netdev_priv(br_dev);
+++	} else {
+++		src = NULL;
+++		br = netdev_priv(ctx->dev);
+++	}
++ 
++-	br_vlan_fill_forward_path_pvid(br, ctx, path);
+++	br_vlan_fill_forward_path_pvid(br, src, ctx, path);
++ 
++ 	f = br_fdb_find_rcu(br, ctx->daddr, path->bridge.vlan_id);
++ 	if (!f)
++diff --git a/net/bridge/br_private.h b/net/bridge/br_private.h
++index b9b2981c4841..02744bd14b38 100644
++--- a/net/bridge/br_private.h
+++++ b/net/bridge/br_private.h
++@@ -1616,6 +1616,7 @@ bool br_vlan_can_enter_range(const struct net_bridge_vlan *v_curr,
++ 			     const struct net_bridge_vlan *range_end);
++ 
++ void br_vlan_fill_forward_path_pvid(struct net_bridge *br,
+++				    struct net_bridge_port *p,
++ 				    struct net_device_path_ctx *ctx,
++ 				    struct net_device_path *path);
++ int br_vlan_fill_forward_path_mode(struct net_bridge *br,
++@@ -1785,6 +1786,7 @@ static inline int nbp_get_num_vlan_infos(struct net_bridge_port *p,
++ }
++ 
++ static inline void br_vlan_fill_forward_path_pvid(struct net_bridge *br,
+++						  struct net_bridge_port *p,
++ 						  struct net_device_path_ctx *ctx,
++ 						  struct net_device_path *path)
++ {
++diff --git a/net/bridge/br_vlan.c b/net/bridge/br_vlan.c
++index 29f947b8c54f..24f815fae63b 100644
++--- a/net/bridge/br_vlan.c
+++++ b/net/bridge/br_vlan.c
++@@ -1445,6 +1445,7 @@ int br_vlan_get_pvid_rcu(const struct net_device *dev, u16 *p_pvid)
++ EXPORT_SYMBOL_GPL(br_vlan_get_pvid_rcu);
++ 
++ void br_vlan_fill_forward_path_pvid(struct net_bridge *br,
+++				    struct net_bridge_port *p,
++ 				    struct net_device_path_ctx *ctx,
++ 				    struct net_device_path *path)
++ {
++@@ -1457,7 +1458,10 @@ void br_vlan_fill_forward_path_pvid(struct net_bridge *br,
++ 	if (!br_opt_get(br, BROPT_VLAN_ENABLED))
++ 		return;
++ 
++-	vg = br_vlan_group_rcu(br);
+++	if (p)
+++		vg = nbp_vlan_group_rcu(p);
+++	else
+++		vg = br_vlan_group_rcu(br);
++ 
++ 	if (idx >= 0 &&
++ 	    ctx->vlan[idx].proto == br->vlan_proto) {
++-- 
++2.55.0
++
+diff --git a/target/linux/generic/pending-6.18/675-06-net-core-dev-Add-dev_fill_bridge_path.patch b/target/linux/generic/pending-6.18/675-06-net-core-dev-Add-dev_fill_bridge_path.patch
+new file mode 100644
+index 00000000..68d1aaf2
+--- /dev/null
++++ b/target/linux/generic/pending-6.18/675-06-net-core-dev-Add-dev_fill_bridge_path.patch
+@@ -0,0 +1,137 @@
++From 4dd6894292d8660909db43b37d66f74efc5316ec Mon Sep 17 00:00:00 2001
++From: Eric Woudstra <ericwouds@gmail.com>
++Date: Wed, 1 Jul 2026 03:19:07 +0300
++Subject: [PATCH 06/14] net: core: dev: Add dev_fill_bridge_path()
++
++New function dev_fill_bridge_path(), similar to dev_fill_forward_path().
++It handles starting from a bridge port instead of the bridge master.
++The structures ctx and nft_forward_info need to be already filled in with
++the (vlan) encaps.
++
++Based on commit 6d79e1e67958 from ericwoud/bpir-nftflow-nf-next-20260707.
++
++Signed-off-by: Eric Woudstra <ericwouds@gmail.com>
++Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
++---
++ include/linux/netdevice.h |  2 ++
++ net/core/dev.c            | 66 +++++++++++++++++++++++++++++++--------
++ 2 files changed, 55 insertions(+), 13 deletions(-)
++
++diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
++index aba9d7dfe170..88edd2ae485f 100644
++--- a/include/linux/netdevice.h
+++++ b/include/linux/netdevice.h
++@@ -3349,6 +3349,8 @@ void dev_remove_offload(struct packet_offload *po);
++ 
++ int dev_get_iflink(const struct net_device *dev);
++ int dev_fill_metadata_dst(struct net_device *dev, struct sk_buff *skb);
+++int dev_fill_bridge_path(struct net_device_path_ctx *ctx,
+++			 struct net_device_path_stack *stack);
++ int dev_fill_forward_path(const struct net_device *dev, const u8 *daddr,
++ 			  struct net_device_path_stack *stack);
++ struct net_device *dev_get_by_name(struct net *net, const char *name);
++diff --git a/net/core/dev.c b/net/core/dev.c
++index 8dee703a0916..02897f10fbd9 100644
++--- a/net/core/dev.c
+++++ b/net/core/dev.c
++@@ -744,44 +744,84 @@ static struct net_device_path *dev_fwd_path(struct net_device_path_stack *stack)
++ 	return &stack->path[k];
++ }
++ 
++-int dev_fill_forward_path(const struct net_device *dev, const u8 *daddr,
++-			  struct net_device_path_stack *stack)
+++static int dev_fill_forward_path_common(struct net_device_path_ctx *ctx,
+++					struct net_device_path_stack *stack)
++ {
++ 	const struct net_device *last_dev;
++-	struct net_device_path_ctx ctx = {
++-		.dev	= dev,
++-	};
++ 	struct net_device_path *path;
++ 	int ret = 0;
++ 
++-	memcpy(ctx.daddr, daddr, sizeof(ctx.daddr));
++-	stack->num_paths = 0;
++-	while (ctx.dev && ctx.dev->netdev_ops->ndo_fill_forward_path) {
++-		last_dev = ctx.dev;
+++	while (ctx->dev && ctx->dev->netdev_ops->ndo_fill_forward_path) {
+++		last_dev = ctx->dev;
++ 		path = dev_fwd_path(stack);
++ 		if (!path)
++ 			return -1;
++ 
++ 		memset(path, 0, sizeof(struct net_device_path));
++-		ret = ctx.dev->netdev_ops->ndo_fill_forward_path(&ctx, path);
+++		ret = ctx->dev->netdev_ops->ndo_fill_forward_path(ctx, path);
++ 		if (ret < 0)
++ 			return -1;
++ 
++-		if (WARN_ON_ONCE(last_dev == ctx.dev))
+++		if (WARN_ON_ONCE(last_dev == ctx->dev))
++ 			return -1;
++ 	}
++ 
++-	if (!ctx.dev)
+++	if (!ctx->dev)
++ 		return ret;
++ 
++ 	path = dev_fwd_path(stack);
++ 	if (!path)
++ 		return -1;
++ 	path->type = DEV_PATH_ETHERNET;
++-	path->dev = ctx.dev;
+++	path->dev = ctx->dev;
++ 
++ 	return ret;
++ }
+++
+++int dev_fill_bridge_path(struct net_device_path_ctx *ctx,
+++			 struct net_device_path_stack *stack)
+++{
+++	const struct net_device *last_dev, *br_dev;
+++	struct net_device_path *path;
+++
+++	stack->num_paths = 0;
+++
+++	if (!ctx->dev || !netif_is_bridge_port(ctx->dev))
+++		return -1;
+++
+++	br_dev = netdev_master_upper_dev_get_rcu((struct net_device *)ctx->dev);
+++	if (!br_dev || !br_dev->netdev_ops->ndo_fill_forward_path)
+++		return -1;
+++
+++	last_dev = ctx->dev;
+++	path = dev_fwd_path(stack);
+++	if (!path)
+++		return -1;
+++
+++	memset(path, 0, sizeof(struct net_device_path));
+++	if (br_dev->netdev_ops->ndo_fill_forward_path(ctx, path) < 0)
+++		return -1;
+++
+++	if (!ctx->dev || WARN_ON_ONCE(last_dev == ctx->dev))
+++		return -1;
+++
+++	return dev_fill_forward_path_common(ctx, stack);
+++}
+++EXPORT_SYMBOL_GPL(dev_fill_bridge_path);
+++
+++int dev_fill_forward_path(const struct net_device *dev, const u8 *daddr,
+++			  struct net_device_path_stack *stack)
+++{
+++	struct net_device_path_ctx ctx = {
+++		.dev	= dev,
+++	};
+++
+++	memcpy(ctx.daddr, daddr, sizeof(ctx.daddr));
+++
+++	stack->num_paths = 0;
+++
+++	return dev_fill_forward_path_common(&ctx, stack);
+++}
++ EXPORT_SYMBOL_GPL(dev_fill_forward_path);
++ 
++ /* must be called under rcu_read_lock(), as we dont take a reference */
++-- 
++2.55.0
++
+diff --git a/target/linux/generic/pending-6.18/675-07-netfilter-nf_flow_table_offload-Add-nf_flow_rule_bri.patch b/target/linux/generic/pending-6.18/675-07-netfilter-nf_flow_table_offload-Add-nf_flow_rule_bri.patch
+new file mode 100644
+index 00000000..dd270608
+--- /dev/null
++++ b/target/linux/generic/pending-6.18/675-07-netfilter-nf_flow_table_offload-Add-nf_flow_rule_bri.patch
+@@ -0,0 +1,60 @@
++From 28c819759cd9634cb5002da39138831cacd9b987 Mon Sep 17 00:00:00 2001
++From: Eric Woudstra <ericwouds@gmail.com>
++Date: Wed, 1 Jul 2026 03:19:27 +0300
++Subject: [PATCH 07/14] netfilter: nf_flow_table_offload: Add
++ nf_flow_rule_bridge()
++
++Add nf_flow_rule_bridge().
++
++It only calls the common rule and adds the redirect.
++
++Based on commit bb7f64bc456d from ericwoud/bpir-nftflow-nf-next-20260707.
++
++Signed-off-by: Eric Woudstra <ericwouds@gmail.com>
++Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
++---
++ include/net/netfilter/nf_flow_table.h |  3 +++
++ net/netfilter/nf_flow_table_offload.c | 13 +++++++++++++
++ 2 files changed, 16 insertions(+)
++
++diff --git a/include/net/netfilter/nf_flow_table.h b/include/net/netfilter/nf_flow_table.h
++index e9f72d2558e9..65cf5a4d56f1 100644
++--- a/include/net/netfilter/nf_flow_table.h
+++++ b/include/net/netfilter/nf_flow_table.h
++@@ -348,6 +348,9 @@ void nf_flow_table_offload_flush_cleanup(struct nf_flowtable *flowtable);
++ int nf_flow_table_offload_setup(struct nf_flowtable *flowtable,
++ 				struct net_device *dev,
++ 				enum flow_block_command cmd);
+++int nf_flow_rule_bridge(struct net *net, struct flow_offload *flow,
+++			enum flow_offload_tuple_dir dir,
+++			struct nf_flow_rule *flow_rule);
++ int nf_flow_rule_route_ipv4(struct net *net, struct flow_offload *flow,
++ 			    enum flow_offload_tuple_dir dir,
++ 			    struct nf_flow_rule *flow_rule);
++diff --git a/net/netfilter/nf_flow_table_offload.c b/net/netfilter/nf_flow_table_offload.c
++index 4f346f51d7d7..867e552a2815 100644
++--- a/net/netfilter/nf_flow_table_offload.c
+++++ b/net/netfilter/nf_flow_table_offload.c
++@@ -792,6 +792,19 @@ int nf_flow_rule_route_ipv6(struct net *net, struct flow_offload *flow,
++ }
++ EXPORT_SYMBOL_GPL(nf_flow_rule_route_ipv6);
++ 
+++int nf_flow_rule_bridge(struct net *net, struct flow_offload *flow,
+++			enum flow_offload_tuple_dir dir,
+++			struct nf_flow_rule *flow_rule)
+++{
+++	if (nf_flow_rule_route_common(net, flow, dir, flow_rule) < 0)
+++		return -1;
+++
+++	flow_offload_redirect(net, flow, dir, flow_rule);
+++
+++	return 0;
+++}
+++EXPORT_SYMBOL_GPL(nf_flow_rule_bridge);
+++
++ static struct nf_flow_rule *
++ nf_flow_offload_rule_alloc(struct net *net,
++ 			   const struct flow_offload_work *offload,
++-- 
++2.55.0
++
+diff --git a/target/linux/generic/pending-6.18/675-08-netfilter-nf_flow_table_inet-Add-nf_flowtable_type-f.patch b/target/linux/generic/pending-6.18/675-08-netfilter-nf_flow_table_inet-Add-nf_flowtable_type-f.patch
+new file mode 100644
+index 00000000..62631890
+--- /dev/null
++++ b/target/linux/generic/pending-6.18/675-08-netfilter-nf_flow_table_inet-Add-nf_flowtable_type-f.patch
+@@ -0,0 +1,63 @@
++From d9049ce47fd46da8121c20f9d7d927fdf1239331 Mon Sep 17 00:00:00 2001
++From: Eric Woudstra <ericwouds@gmail.com>
++Date: Wed, 1 Jul 2026 03:19:53 +0300
++Subject: [PATCH 08/14] netfilter: nf_flow_table_inet: Add nf_flowtable_type
++ flowtable_bridge
++
++This will allow a flowtable to be added to the nft bridge family.
++
++Based on commit d9c8fada6b88 from ericwoud/bpir-nftflow-nf-next-20260707.
++
++Signed-off-by: Eric Woudstra <ericwouds@gmail.com>
++Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
++---
++ net/netfilter/nf_flow_table_inet.c | 13 +++++++++++++
++ 1 file changed, 13 insertions(+)
++
++diff --git a/net/netfilter/nf_flow_table_inet.c b/net/netfilter/nf_flow_table_inet.c
++index b0f199171932..80b238196f29 100644
++--- a/net/netfilter/nf_flow_table_inet.c
+++++ b/net/netfilter/nf_flow_table_inet.c
++@@ -65,6 +65,16 @@ static int nf_flow_rule_route_inet(struct net *net,
++ 	return err;
++ }
++ 
+++static struct nf_flowtable_type flowtable_bridge = {
+++	.family		= NFPROTO_BRIDGE,
+++	.init		= nf_flow_table_init,
+++	.setup		= nf_flow_table_offload_setup,
+++	.action		= nf_flow_rule_bridge,
+++	.free		= nf_flow_table_free,
+++	.hook		= nf_flow_offload_inet_hook,
+++	.owner		= THIS_MODULE,
+++};
+++
++ static struct nf_flowtable_type flowtable_inet = {
++ 	.family		= NFPROTO_INET,
++ 	.init		= nf_flow_table_init,
++@@ -97,6 +107,7 @@ static struct nf_flowtable_type flowtable_ipv6 = {
++ 
++ static int __init nf_flow_inet_module_init(void)
++ {
+++	nft_register_flowtable_type(&flowtable_bridge);
++ 	nft_register_flowtable_type(&flowtable_ipv4);
++ 	nft_register_flowtable_type(&flowtable_ipv6);
++ 	nft_register_flowtable_type(&flowtable_inet);
++@@ -109,6 +120,7 @@ static void __exit nf_flow_inet_module_exit(void)
++ 	nft_unregister_flowtable_type(&flowtable_inet);
++ 	nft_unregister_flowtable_type(&flowtable_ipv6);
++ 	nft_unregister_flowtable_type(&flowtable_ipv4);
+++	nft_unregister_flowtable_type(&flowtable_bridge);
++ }
++ 
++ module_init(nf_flow_inet_module_init);
++@@ -118,5 +130,6 @@ MODULE_LICENSE("GPL");
++ MODULE_AUTHOR("Pablo Neira Ayuso <pablo@netfilter.org>");
++ MODULE_ALIAS_NF_FLOWTABLE(AF_INET);
++ MODULE_ALIAS_NF_FLOWTABLE(AF_INET6);
+++MODULE_ALIAS_NF_FLOWTABLE(AF_BRIDGE);
++ MODULE_ALIAS_NF_FLOWTABLE(1); /* NFPROTO_INET */
++ MODULE_DESCRIPTION("Netfilter flow table mixed IPv4/IPv6 module");
++-- 
++2.55.0
++
+diff --git a/target/linux/generic/pending-6.18/675-09-netfilter-nft_flow_offload-nft_flow_offload_eval-che.patch b/target/linux/generic/pending-6.18/675-09-netfilter-nft_flow_offload-nft_flow_offload_eval-che.patch
+new file mode 100644
+index 00000000..d6c7b6a4
+--- /dev/null
++++ b/target/linux/generic/pending-6.18/675-09-netfilter-nft_flow_offload-nft_flow_offload_eval-che.patch
+@@ -0,0 +1,48 @@
++From 58d699092a63ad9718b95b3ec07e12e1058ed6b1 Mon Sep 17 00:00:00 2001
++From: Bohdan Chubuk <chbgdn@gmail.com>
++Date: Sun, 26 Jul 2026 01:24:57 +0300
++Subject: [PATCH 09/14] netfilter: nft_flow_offload: nft_flow_offload_eval:
++ check thoff==0
++
++In case of flow through bridge, when evaluating traffic with double vlan,
++pppoe and pppoe-in-q. In this case thoff will be valid only when meta has
++been processed. If meta was not processed in nftables, thoff is zero.
++
++Based on commit aa9bad45e5ea from ericwoud/bpir-nftflow-nf-next-20260707.
++
++Co-authored-by: Eric Woudstra <ericwouds@gmail.com>
++Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
++---
++ net/netfilter/nft_flow_offload.c | 9 ++++++---
++ 1 file changed, 6 insertions(+), 3 deletions(-)
++
++diff --git a/net/netfilter/nft_flow_offload.c b/net/netfilter/nft_flow_offload.c
++index b8f76c9057fd..ea6241a2f1eb 100644
++--- a/net/netfilter/nft_flow_offload.c
+++++ b/net/netfilter/nft_flow_offload.c
++@@ -58,7 +58,7 @@ static void nft_flow_offload_eval(const struct nft_expr *expr,
++ 	struct flow_offload *flow;
++ 	enum ip_conntrack_dir dir;
++ 	struct nf_conn *ct;
++-	int ret;
+++	int ret, thoff;
++ 
++ 	if (nft_flow_offload_skip(pkt->skb, nft_pf(pkt)))
++ 		goto out;
++@@ -69,8 +69,11 @@ static void nft_flow_offload_eval(const struct nft_expr *expr,
++ 
++ 	switch (ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.protonum) {
++ 	case IPPROTO_TCP:
++-		tcph = skb_header_pointer(pkt->skb, nft_thoff(pkt),
++-					  sizeof(_tcph), &_tcph);
+++		thoff = nft_thoff(pkt);
+++		if (thoff == 0)
+++			goto out;
+++		tcph = skb_header_pointer(pkt->skb, thoff, sizeof(_tcph),
+++					  &_tcph);
++ 		if (unlikely(!tcph || tcph->fin || tcph->rst ||
++ 			     !nf_conntrack_tcp_established(ct)))
++ 			goto out;
++-- 
++2.55.0
++
+diff --git a/target/linux/generic/pending-6.18/675-10-netfilter-nft_flow_offload-Add-NFPROTO_BRIDGE-to-val.patch b/target/linux/generic/pending-6.18/675-10-netfilter-nft_flow_offload-Add-NFPROTO_BRIDGE-to-val.patch
+new file mode 100644
+index 00000000..5ccc4384
+--- /dev/null
++++ b/target/linux/generic/pending-6.18/675-10-netfilter-nft_flow_offload-Add-NFPROTO_BRIDGE-to-val.patch
+@@ -0,0 +1,34 @@
++From 863bf8f5714433014946a26c9c406ad1a05f2302 Mon Sep 17 00:00:00 2001
++From: Eric Woudstra <ericwouds@gmail.com>
++Date: Wed, 1 Jul 2026 03:20:09 +0300
++Subject: [PATCH 10/14] netfilter: nft_flow_offload: Add NFPROTO_BRIDGE to
++ validate
++
++Need to add NFPROTO_BRIDGE to nft_flow_offload_validate() to support
++the bridge-fastpath.
++
++Based on commit 48d4f4299a94 from ericwoud/bpir-nftflow-nf-next-20260707.
++
++Signed-off-by: Eric Woudstra <ericwouds@gmail.com>
++Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
++---
++ net/netfilter/nft_flow_offload.c | 3 ++-
++ 1 file changed, 2 insertions(+), 1 deletion(-)
++
++diff --git a/net/netfilter/nft_flow_offload.c b/net/netfilter/nft_flow_offload.c
++index ea6241a2f1eb..b386c5a1ab53 100644
++--- a/net/netfilter/nft_flow_offload.c
+++++ b/net/netfilter/nft_flow_offload.c
++@@ -144,7 +144,8 @@ static int nft_flow_offload_validate(const struct nft_ctx *ctx,
++ 
++ 	if (ctx->family != NFPROTO_IPV4 &&
++ 	    ctx->family != NFPROTO_IPV6 &&
++-	    ctx->family != NFPROTO_INET)
+++	    ctx->family != NFPROTO_INET &&
+++	    ctx->family != NFPROTO_BRIDGE)
++ 		return -EOPNOTSUPP;
++ 
++ 	return nft_chain_validate_hooks(ctx->chain, hook_mask);
++-- 
++2.55.0
++
+diff --git a/target/linux/generic/pending-6.18/675-11-netfilter-nft_flow_offload-Add-bridgeflow-to-nft_flo.patch b/target/linux/generic/pending-6.18/675-11-netfilter-nft_flow_offload-Add-bridgeflow-to-nft_flo.patch
+new file mode 100644
+index 00000000..a7e0e3a4
+--- /dev/null
++++ b/target/linux/generic/pending-6.18/675-11-netfilter-nft_flow_offload-Add-bridgeflow-to-nft_flo.patch
+@@ -0,0 +1,252 @@
++From 174fb8982e6f8a1577ba85a5d8216e497a06ed06 Mon Sep 17 00:00:00 2001
++From: Bohdan Chubuk <chbgdn@gmail.com>
++Date: Sun, 26 Jul 2026 01:24:09 +0300
++Subject: [PATCH 11/14] netfilter: nft_flow_offload: Add bridgeflow to
++ nft_flow_offload_eval()
++
++Add bridge family flowtable support to the nftables flow offload
++expression. When processing traffic in the bridge family, use
++flow_offload_bridge_init() instead of the routing-based init.
++
++flow_offload_bridge_init() extracts encapsulation info (VLAN,
++PPPoE) from the packet and resolves the bridge forwarding path
++using dev_fill_bridge_path() to set up direct xmit offload.
++
++Based on commit 20242242e192 from ericwoud/bpir-nftflow-nf-next-20260707.
++
++Co-authored-by: Eric Woudstra <ericwouds@gmail.com>
++Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
++---
++ include/net/netfilter/nf_flow_table.h |   7 ++
++ net/netfilter/nf_flow_table_path.c    | 128 ++++++++++++++++++++++++++
++ net/netfilter/nft_flow_offload.c      |  20 +++-
++ 3 files changed, 150 insertions(+), 5 deletions(-)
++
++diff --git a/include/net/netfilter/nf_flow_table.h b/include/net/netfilter/nf_flow_table.h
++index 65cf5a4d56f1..6211758e6cd4 100644
++--- a/include/net/netfilter/nf_flow_table.h
+++++ b/include/net/netfilter/nf_flow_table.h
++@@ -14,6 +14,8 @@
++ #include <linux/ppp_defs.h>
++ 
++ struct nf_flowtable;
+++struct nft_flowtable;
+++struct nft_pktinfo;
++ struct nf_flow_rule;
++ struct flow_offload;
++ enum flow_offload_tuple_dir;
++@@ -285,6 +287,11 @@ nf_flow_table_offload_del_cb(struct nf_flowtable *flow_table,
++ void flow_offload_route_init(struct flow_offload *flow,
++ 			     struct nf_flow_route *route);
++ 
+++int flow_offload_bridge_init(struct flow_offload *flow,
+++			     const struct nft_pktinfo *pkt,
+++			     enum ip_conntrack_dir dir,
+++			     struct nft_flowtable *ft);
+++
++ int flow_offload_add(struct nf_flowtable *flow_table, struct flow_offload *flow);
++ void flow_offload_refresh(struct nf_flowtable *flow_table,
++ 			  struct flow_offload *flow, bool force);
++diff --git a/net/netfilter/nf_flow_table_path.c b/net/netfilter/nf_flow_table_path.c
++index 77d0899320dc..72f50547c924 100644
++--- a/net/netfilter/nf_flow_table_path.c
+++++ b/net/netfilter/nf_flow_table_path.c
++@@ -5,6 +5,9 @@
++ #include <linux/netlink.h>
++ #include <linux/netfilter.h>
++ #include <linux/spinlock.h>
+++#include <linux/etherdevice.h>
+++#include <linux/if_vlan.h>
+++#include <linux/ppp_defs.h>
++ #include <linux/netfilter/nf_conntrack_common.h>
++ #include <linux/netfilter/nf_tables.h>
++ #include <net/ip.h>
++@@ -289,3 +292,128 @@ int nft_flow_route(const struct nft_pktinfo *pkt, const struct nf_conn *ct,
++ 	return 0;
++ }
++ EXPORT_SYMBOL_GPL(nft_flow_route);
+++
+++static int nft_dev_fill_bridge_path(struct flow_offload *flow,
+++				    struct nft_flowtable *ft,
+++				    enum ip_conntrack_dir dir,
+++				    const struct net_device *src_dev,
+++				    const struct net_device *dst_dev,
+++				    unsigned char *src_ha,
+++				    unsigned char *dst_ha)
+++{
+++	struct flow_offload_tuple_rhash *th = flow->tuplehash;
+++	struct net_device_path_ctx ctx = {};
+++	struct net_device_path_stack stack;
+++	struct nft_forward_info info = {};
+++	int i, j = 0;
+++
+++	for (i = th[dir].tuple.encap_num - 1; i >= 0 ; i--) {
+++		if (info.num_encaps >= NF_FLOW_TABLE_ENCAP_MAX)
+++			return -1;
+++
+++		if (th[dir].tuple.in_vlan_ingress & BIT(i))
+++			continue;
+++
+++		info.encap[info.num_encaps].id = th[dir].tuple.encap[i].id;
+++		info.encap[info.num_encaps].proto = th[dir].tuple.encap[i].proto;
+++		info.num_encaps++;
+++
+++		if (th[dir].tuple.encap[i].proto == htons(ETH_P_PPP_SES))
+++			continue;
+++
+++		if (ctx.num_vlans >= NET_DEVICE_PATH_VLAN_MAX)
+++			return -1;
+++		ctx.vlan[ctx.num_vlans].id = th[dir].tuple.encap[i].id;
+++		ctx.vlan[ctx.num_vlans].proto = th[dir].tuple.encap[i].proto;
+++		ctx.num_vlans++;
+++	}
+++	ctx.dev = src_dev;
+++	ether_addr_copy(ctx.daddr, dst_ha);
+++
+++	if (dev_fill_bridge_path(&ctx, &stack) < 0)
+++		return -1;
+++
+++	nft_dev_path_info(&stack, &info, dst_ha, &ft->data);
+++
+++	if (!info.indev || info.indev != dst_dev)
+++		return -1;
+++
+++	th[!dir].tuple.iifidx = info.indev->ifindex;
+++	for (i = info.num_encaps - 1; i >= 0; i--) {
+++		th[!dir].tuple.encap[j].id = info.encap[i].id;
+++		th[!dir].tuple.encap[j].proto = info.encap[i].proto;
+++		if (info.ingress_vlans & BIT(i))
+++			th[!dir].tuple.in_vlan_ingress |= BIT(j);
+++		j++;
+++	}
+++	th[!dir].tuple.encap_num = info.num_encaps;
+++
+++	th[dir].tuple.mtu = dst_dev->mtu;
+++	ether_addr_copy(th[dir].tuple.out.h_source, src_ha);
+++	ether_addr_copy(th[dir].tuple.out.h_dest, dst_ha);
+++	th[dir].tuple.out.ifidx = info.outdev->ifindex;
+++	th[dir].tuple.xmit_type = FLOW_OFFLOAD_XMIT_DIRECT;
+++
+++	return 0;
+++}
+++
+++int flow_offload_bridge_init(struct flow_offload *flow,
+++			     const struct nft_pktinfo *pkt,
+++			     enum ip_conntrack_dir dir,
+++			     struct nft_flowtable *ft)
+++{
+++	const struct net_device *in_dev, *out_dev;
+++	struct ethhdr *eth = eth_hdr(pkt->skb);
+++	struct flow_offload_tuple *tuple;
+++	int err, i = 0;
+++
+++	in_dev = nft_in(pkt);
+++	if (!in_dev || !nft_flowtable_find_dev(in_dev, ft))
+++		return -1;
+++
+++	out_dev = nft_out(pkt);
+++	if (!out_dev || !nft_flowtable_find_dev(out_dev, ft))
+++		return -1;
+++
+++	tuple =  &flow->tuplehash[!dir].tuple;
+++
+++	if (skb_vlan_tag_present(pkt->skb)) {
+++		tuple->encap[i].id = skb_vlan_tag_get(pkt->skb);
+++		tuple->encap[i].proto = pkt->skb->vlan_proto;
+++		i++;
+++	}
+++
+++	switch (eth_hdr(pkt->skb)->h_proto) {
+++	case htons(ETH_P_8021Q): {
+++		struct vlan_hdr *vhdr = (struct vlan_hdr *)(skb_mac_header(pkt->skb)
+++					 + sizeof(struct ethhdr));
+++		tuple->encap[i].id = ntohs(vhdr->h_vlan_TCI);
+++		tuple->encap[i].proto = htons(ETH_P_8021Q);
+++		i++;
+++		break;
+++	}
+++	case htons(ETH_P_PPP_SES): {
+++		struct pppoe_hdr *phdr = (struct pppoe_hdr *)(skb_mac_header(pkt->skb)
+++					  + sizeof(struct ethhdr));
+++
+++		tuple->encap[i].id = ntohs(phdr->sid);
+++		tuple->encap[i].proto = htons(ETH_P_PPP_SES);
+++		i++;
+++		break;
+++	}
+++	}
+++	tuple->encap_num = i;
+++
+++	err = nft_dev_fill_bridge_path(flow, ft, !dir, out_dev, in_dev,
+++				       eth->h_dest, eth->h_source);
+++	if (err < 0)
+++		return err;
+++
+++	err = nft_dev_fill_bridge_path(flow, ft, dir, in_dev, out_dev,
+++				       eth->h_source, eth->h_dest);
+++	if (err < 0)
+++		return err;
+++
+++	return 0;
+++}
+++EXPORT_SYMBOL_GPL(flow_offload_bridge_init);
++diff --git a/net/netfilter/nft_flow_offload.c b/net/netfilter/nft_flow_offload.c
++index b386c5a1ab53..cb67f82245b2 100644
++--- a/net/netfilter/nft_flow_offload.c
+++++ b/net/netfilter/nft_flow_offload.c
++@@ -6,6 +6,7 @@
++ #include <linux/netfilter.h>
++ #include <linux/workqueue.h>
++ #include <linux/spinlock.h>
+++#include <linux/if_vlan.h>
++ #include <linux/netfilter/nf_conntrack_common.h>
++ #include <linux/netfilter/nf_tables.h>
++ #include <net/ip.h>
++@@ -52,6 +53,7 @@ static void nft_flow_offload_eval(const struct nft_expr *expr,
++ {
++ 	struct nft_flow_offload *priv = nft_expr_priv(expr);
++ 	struct nf_flowtable *flowtable = &priv->flowtable->data;
+++	bool routing = flowtable->type->family != NFPROTO_BRIDGE;
++ 	struct tcphdr _tcph, *tcph = NULL;
++ 	struct nf_flow_route route = {};
++ 	enum ip_conntrack_info ctinfo;
++@@ -108,14 +110,20 @@ static void nft_flow_offload_eval(const struct nft_expr *expr,
++ 		goto out;
++ 
++ 	dir = CTINFO2DIR(ctinfo);
++-	if (nft_flow_route(pkt, ct, &route, dir, priv->flowtable) < 0)
++-		goto err_flow_route;
+++	if (routing) {
+++		if (nft_flow_route(pkt, ct, &route, dir, priv->flowtable) < 0)
+++			goto err_flow_route;
+++	}
++ 
++ 	flow = flow_offload_alloc(ct);
++ 	if (!flow)
++ 		goto err_flow_alloc;
++ 
++-	flow_offload_route_init(flow, &route);
+++	if (routing)
+++		flow_offload_route_init(flow, &route);
+++	else
+++		if (flow_offload_bridge_init(flow, pkt, dir, priv->flowtable) < 0)
+++			goto err_flow_add;
++ 	if (tcph)
++ 		flow_offload_ct_tcp(ct);
++ 
++@@ -129,8 +137,10 @@ static void nft_flow_offload_eval(const struct nft_expr *expr,
++ err_flow_add:
++ 	flow_offload_free(flow);
++ err_flow_alloc:
++-	dst_release(route.tuple[dir].dst);
++-	dst_release(route.tuple[!dir].dst);
+++	if (routing) {
+++		dst_release(route.tuple[dir].dst);
+++		dst_release(route.tuple[!dir].dst);
+++	}
++ err_flow_route:
++ 	clear_bit(IPS_OFFLOAD_BIT, &ct->status);
++ out:
++-- 
++2.55.0
++
+diff --git a/target/linux/generic/pending-6.18/675-12-selftests-netfilter-Add-bridge_fastpath.sh.patch b/target/linux/generic/pending-6.18/675-12-selftests-netfilter-Add-bridge_fastpath.sh.patch
+new file mode 100644
+index 00000000..468f7b1f
+--- /dev/null
++++ b/target/linux/generic/pending-6.18/675-12-selftests-netfilter-Add-bridge_fastpath.sh.patch
+@@ -0,0 +1,1146 @@
++From 503ba6559a88ef9538a3217ee695627747214931 Mon Sep 17 00:00:00 2001
++From: Eric Woudstra <ericwouds@gmail.com>
++Date: Wed, 1 Jul 2026 03:40:58 +0300
++Subject: [PATCH 12/14] selftests: netfilter: Add bridge_fastpath.sh
++
++Add a script to test various scenarios where a bridge is involved
++in the fastpath. It runs tests in the forward path, and also in
++a bridged path.
++
++The setup is similar to a basic home router with multiple lan ports.
++
++It uses 3 pairs of veth-devices. Each or all pairs can be
++replaced by a pair of real interfaces, interconnected by wire.
++This is necessary to test the behavior when dealing with
++dsa ports, foreign (dsa) ports and switchdev userports that support
++SWITCHDEV_OBJ_ID_PORT_VLAN.
++
++See the head of the script for a detailed description.
++
++Based on commit d1b3299c0732 from ericwoud/bpir-nftflow-nf-next-20260707.
++
++Signed-off-by: Eric Woudstra <ericwouds@gmail.com>
++Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
++---
++ .../testing/selftests/net/netfilter/Makefile  |    1 +
++ .../net/netfilter/bridge_fastpath.sh          | 1096 +++++++++++++++++
++ 2 files changed, 1097 insertions(+)
++ create mode 100755 tools/testing/selftests/net/netfilter/bridge_fastpath.sh
++
++diff --git a/tools/testing/selftests/net/netfilter/Makefile b/tools/testing/selftests/net/netfilter/Makefile
++index ee2d1a5254f8..a7edc6654040 100644
++--- a/tools/testing/selftests/net/netfilter/Makefile
+++++ b/tools/testing/selftests/net/netfilter/Makefile
++@@ -10,6 +10,7 @@ TEST_PROGS := \
++ 	br_netfilter.sh \
++ 	br_netfilter_queue.sh \
++ 	bridge_brouter.sh \
+++	bridge_fastpath.sh \
++ 	conntrack_clash.sh \
++ 	conntrack_dump_flush.sh \
++ 	conntrack_icmp_related.sh \
++diff --git a/tools/testing/selftests/net/netfilter/bridge_fastpath.sh b/tools/testing/selftests/net/netfilter/bridge_fastpath.sh
++new file mode 100755
++index 000000000000..c93f5aa4bb31
++--- /dev/null
+++++ b/tools/testing/selftests/net/netfilter/bridge_fastpath.sh
++@@ -0,0 +1,1096 @@
+++#!/bin/bash
+++# SPDX-License-Identifier: GPL-2.0
+++#
+++# Check if conntrack, nft chain and fastpath is functional in setups
+++# where a bridge is in the fastpath.
+++#
+++# Commandline options make it possible to use real ethernet pairs
+++# instead of veth-device pairs. Any, or all, pairs can be tested using
+++# real hardware pairs. This is can be useful to test dsa-ports,
+++# switchdev (dsa) foreign ports and switchdev ports supporting
+++# SWITCHDEV_OBJ_ID_PORT_VLAN.
+++#
+++# First tcp is tested. Conntrack and nft chain are tested using a counter.
+++# When there is a fastpath possible between the interfaces then the
+++# fastpath is also tested.
+++# When there is a hardware offloaded fastpath possible between the
+++# interfaces then the hardware offloaded path is also tested.
+++#
+++# Setup is as a typical router:
+++#
+++#           nsclientwan
+++#               |
+++#              nsrt
+++#              |  |
+++#      nsclient1  nsclient2
+++#
+++# Masquerading for ipv4 only.
+++#
+++# First check if a bridge table forward chain can be setup, skip
+++# these tests if this is not possible.
+++# Then check if a inet table forward chain can be setup, skip
+++# these tests if this is not possible.
+++#
+++# Different setups of paths are tested that involve a bridge in the
+++# fastpath. This can be in the forward-fastpath or in the bridge-fastpath.
+++#
+++# The first series, in the bridge-fastpath, using a vlan-unaware bridge.
+++# Traffic with the following vlan-tags is checked:
+++#  a. without vlan
+++#  b. single vlan
+++#  c. double q vlan  (only on veth-devices)
+++#  d. 802.1ad vlan   (only on veth-devices)
+++#  e. pppoe       (when available)
+++#  f. pppoe-in-q  (when available)
+++#
+++# (for items c to f fastpath can only work when a conntrack zone is set)
+++# (double tag testing results in broken tcp traffic on most hardware,
+++#  in this test setup, use '-a' argument to test it anyway)
+++# (pppoe testing takes place if pppd and pppoe-server are installed)
+++# (Only in series 1 ip-fragmented traffic is tested with conntrack)
+++#
+++# The second series, in the bridge-fastpath, using a vlan-aware bridge.
+++# Here we test all combinations of ingress/egress with or without single
+++# vlan encaps.
+++#
+++# The third series, in the forward-fastpath, using a vlan-aware bridge,
+++# without a vlan-device linked to the master port. We test the same combinations
+++# of ingress/egress with or without single vlan encaps.
+++#
+++# The fourth series, in the forward-fastpath, using a vlan-aware bridge,
+++# with a vlan-device linked to the master port. We test the same combinations
+++# of ingress/egress with or without single vlan encaps.
+++#
+++# Note 1: Using dsa userports on both sides of eth-pairs client1 or client2
+++# gives erratic and unpredictable results. Use, for example, an usb-eth device
+++# on the client side to test a dsa-userport.
+++#
+++# Note 2: Testing the hardware offloaded fastpath, it is not checked if the
+++# packets do not follow the software fastpath instead. A universal way to
+++# check this should be added at some point.
+++#
+++# Note 3: Some interfaces to test on the router side, are netns immutable.
+++# Use the -d or --defaultnsrouter option so that the interfaces of the router
+++# do not have to change netns. The router is build up in the default netns.
+++#
+++# shellcheck disable=SC2317
+++
+++source lib.sh
+++
+++checktool "nft --version" "run test without nft"
+++checktool "socat -h" "run test without socat"
+++checktool "bridge -V" "run test without bridge"
+++
+++NR_OF_TESTS=4
+++VID1=100
+++VID2=101
+++BRWAN=brwan
+++BRLAN=brlan
+++BRCL=brcl
+++LINKUP_TIMEOUT=10
+++PING_TIMEOUT=10
+++SOCAT_TIMEOUT=10
+++filesize=$((2 * 1024 * 1024))
+++pingsize=9000
+++
+++filein=$(mktemp)
+++file1out=$(mktemp)
+++file2out=$(mktemp)
+++pppoeserveroptions=$(mktemp)
+++pppoeserverpid=$(mktemp)
+++
+++setup_ns nsclientwan nsclientlan1 nsclientlan2
+++
+++        WAN=0        ; LAN1=1        ; LAN2=2          ; ADWAN=3     ; ADLAN=4 ;
+++# shellcheck disable=SC2154
+++nsa=( "$nsclientwan" "$nsclientlan1" "$nsclientlan2" ) # $nsrt         $nsrt
+++AD4=( '192.168.1.1'  '192.168.2.101' '192.168.2.102' '192.168.1.2' '192.168.2.1' )
+++AD6=( 'dead:1::1'    'dead:2::101'   'dead:2::102'   'dead:1::2'   'dead:2::1'   )
+++
+++tests_string=$(seq 1 $NR_OF_TESTS)
+++
+++while [ "${1:-}" != '' ]; do
+++	case "$1" in
+++	'-0' | '--pairwan')
+++		shift
+++		vethcl[WAN]="${1%,*}"
+++		vethrt[WAN]="${1#*,}"
+++		;;
+++	'-1' | '--pairlan1')
+++		shift
+++		vethcl[LAN1]="${1%,*}"
+++		vethrt[LAN1]="${1#*,}"
+++		;;
+++	'-2' | '--pairlan2')
+++		shift
+++		vethcl[LAN2]="${1%,*}"
+++		vethrt[LAN2]="${1#*,}"
+++		;;
+++	'-s' | '--filesize')
+++		shift
+++		filesize=$1
+++		;;
+++	'-p' | '--parts')
+++		shift
+++		tests_string=$1
+++		;;
+++	'-4' | '--ipv4')
+++		do_ipv4=1
+++		;;
+++	'-6' | '--ipv6')
+++		do_ipv6=1
+++		;;
+++	'-n' | '--noskip')
+++		noskip=1
+++		;;
+++	'-d' | '--defaultnsrouter')
+++		defaultnsrouter=1
+++		;;
+++	'-f' | '--fixmac')
+++		fixmac=1
+++		;;
+++	'-t' | '--showtree')
+++		showtree=1
+++		;;
+++	'-w' | '--werror')
+++		werror=1
+++		;;
+++	*)
+++		cat <<-EOF
+++		Usage: $(basename "$0") [OPTION]...
+++		  -0 --pairwan  eth0cl,eth0rt  pair of real interfaces to use on wan side
+++		  -1 --pairlan1 eth1cl,eth1rt  pair of real interfaces to use on lan1 side
+++		  -2 --pairlan2 eth2cl,eth2rt  pair of real interfaces to use on lan2 side
+++		  -s --filesize                filesize to use for testing in bytes
+++		  -p --parts                   partnumbers of tests to run, comma separated
+++		  -4|-6 --ipv4|--ipv6          test ipv4/6 only
+++		  -d --defaultnsrouter         router in default network namespace, caution!
+++		  -f --fixmac                  change mac address when conflict found
+++		  -n --noskip                  also perform the normally skipped tests
+++		  -t --showtree                show the tree of used interfaces
+++		  -w --werror                  treat all warings as errors
+++		EOF
+++		exit "$ksft_skip"
+++		;;
+++	esac
+++	shift
+++done
+++
+++for i in ${tests_string//','/' '}; do
+++	tests[i]="yes"
+++done
+++
+++if [ -n "$defaultnsrouter" ]; then
+++	nsrt="nsrt-$(mktemp -u XXXXXX)"
+++	touch "/var/run/netns/$nsrt"
+++	mount --bind /proc/1/ns/net "/var/run/netns/$nsrt"
+++else
+++	setup_ns nsrt
+++fi
+++nsa+=("$nsrt" "$nsrt")
+++
+++# shellcheck disable=SC2329
+++cleanup() {
+++	if [ -n "$defaultnsrouter" ]; then
+++		umount "/var/run/netns/$nsrt"
+++		rm -f "/var/run/netns/$nsrt"
+++	fi
+++	cleanup_all_ns
+++	rm -f "$filein" "$file1out" "$file2out" "$pppoeserveroptions" "$pppoeserverpid"
+++}
+++
+++trap cleanup EXIT
+++
+++head -c "$filesize" < /dev/urandom > "$filein"
+++
+++check_mac()
+++{
+++	local ns=$1
+++	local dev=$2
+++	local othermacs=$3
+++	local mac
+++
+++	mac=$(ip -net "$ns" -br link show dev "$dev" | \
+++		grep -o -E '([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}')
+++
+++	if [[ ! "$othermacs" =~ $mac ]]; then
+++		echo "$mac"
+++		return 0
+++	fi
+++	echo "WARN: Conflicting mac address $dev $mac" 1>&2
+++
+++	[ -z "$fixmac" ] && return 1
+++
+++	for (( j = 0 ; j < 10 ; j++ )); do
+++		mac="${mac::6}$(printf %02x:%02x:%02x:%02x $((RANDOM%256)) \
+++		         $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256)))"
+++		[[ "$othermacs" =~ $mac ]] && continue
+++		echo "$mac"
+++		ip -net "$ns" link set dev "$dev" address "$mac" 1>&2
+++		return $?
+++	done
+++	return 1
+++}
+++
+++is_link()
+++{
+++	local updown=$1
+++	local ns=$2
+++	local dev=$3
+++
+++	if ip -net "$ns" link show dev "$dev" "${updown,,}" 2>/dev/null | \
+++				grep -q "state ${updown^^}"
+++	then
+++		return 0
+++	fi
+++	return 1
+++}
+++
+++set_pair_link()
+++{
+++	local updown=$1
+++	local all="${*:2}"
+++	local lret=0
+++	local i j
+++
+++	for i in $all; do
+++		ns="${nsa[$i]}"
+++		ip -net "$ns" link set "${vethcl[$i]}" "$updown"
+++		lret=$((lret | $?))
+++		ip -net "$nsrt" link set "${vethrt[$i]}" "$updown"
+++		lret=$((lret | $?))
+++	done
+++	[ $lret -ne 0 ] && return 1
+++
+++	for j in $(seq 1 $((LINKUP_TIMEOUT * 5 ))); do
+++		lret=0
+++		for i in $all; do
+++			ns="${nsa[$i]}"
+++			is_link "$updown" "$ns" "${vethcl[$i]}"
+++			lret=$((lret | $?))
+++			is_link "$updown" "$nsrt" "${vethrt[$i]}"
+++			lret=$((lret | $?))
+++		done
+++		[ $lret -eq 0 ] && break
+++		sleep 0.2
+++	done
+++	return $lret
+++}
+++
+++wait_ping()
+++{
+++	local i1=$1
+++	local i2=$2
+++	local size=$3
+++	local ipv=$4
+++	local ns1=${nsa[$i1]}
+++	local j ad lret
+++
+++	[[ "$ipv" == "6" ]] && ad="${AD6[$i2]}" || ad="${AD4[$i2]}"
+++	for j in $(seq 1 $((PING_TIMEOUT * 5 ))); do
+++		ip netns exec "$ns1" ping -c 1 -w $PING_TIMEOUT -i 0.2 \
+++			-s "$size" -q "${AD4[$i2]}" >/dev/null 2>&1
+++		lret=$?
+++		[ $lret -le 1 ] && return $lret
+++		sleep 0.2
+++	done
+++	return 1
+++}
+++
+++add_addr()
+++{
+++	local i=$1
+++	local dev=$2
+++	local ns=${nsa[$i]}
+++	local ad4=${AD4[$i]}
+++	local ad6=${AD6[$i]}
+++
+++	ip -net "$ns" addr add "${ad4}/24" dev "$dev"
+++	ip -net "$ns" addr add "${ad6}/64" dev "$dev" nodad
+++	if [[ "$ns" == "nsclientlan"* ]]; then
+++		ip -net "$ns" route add default via "${AD4[$ADLAN]}"
+++		ip -net "$ns" route add default via "${AD6[$ADLAN]}"
+++	elif [[ "$ns" == "nsclientwan"* ]]; then
+++		ip -net "$ns" route add default via "${AD6[$ADWAN]}"
+++	fi
+++
+++}
+++
+++del_addr()
+++{
+++	local i=$1
+++	local dev=$2
+++	local ns=${nsa[$i]}
+++	local ad4=${AD4[$i]}
+++	local ad6=${AD6[$i]}
+++
+++	if [[ "$ns" == "nsclientlan"* ]]; then
+++		ip -net "$ns" route del default via "${AD6[$ADLAN]}"
+++		ip -net "$ns" route del default via "${AD4[$ADLAN]}"
+++	elif [[ "$ns" == "nsclientwan"* ]]; then
+++		ip -net "$ns" route del default via "${AD6[$ADWAN]}"
+++	fi
+++	ip -net "$ns" addr del "${ad6}/64" dev "$dev" nodad
+++	ip -net "$ns" addr del "${ad4}/24" dev "$dev"
+++}
+++
+++set_client()
+++{
+++	local i=$1
+++	local vlan=$2
+++	local arg=$3
+++	local ns=${nsa[$i]}
+++	local vdev="${vethcl[$i]}"
+++	local brdev="$BRCL"
+++	local proto=""
+++	local pvidslave=""
+++
+++	unset_client "$i"
+++
+++	if [[ "$vlan" == "qq" ]]; then
+++		ip -net "$ns" link add link "$vdev" name "$vdev.$VID1" type vlan id $VID1
+++		ip -net "$ns" link add link "$vdev.$VID1" name "$vdev.$VID1.$VID2" \
+++			                                       type vlan id $VID2
+++		ip -net "$ns" link set "$vdev.$VID1" up
+++		ip -net "$ns" link set "$vdev.$VID1.$VID2" up
+++		add_addr "$i" "$vdev.$VID1.$VID2"
+++		return
+++	fi
+++
+++	[[ "$vlan" == "none" ]] && pvidslave="pvid untagged"
+++	[[ "$vlan" == "ad" ]] && proto="vlan_protocol 802.1ad"
+++
+++	# shellcheck disable=SC2086
+++	ip -net "$ns" link add "$brdev" type bridge vlan_filtering 1 vlan_default_pvid 0 $proto
+++	ip -net "$ns" link set "$vdev" master "$brdev"
+++	ip -net "$ns" link set "$brdev" up
+++
+++	# shellcheck disable=SC2086
+++	bridge -net "$ns" vlan add dev "$vdev" vid $VID1 $pvidslave
+++	bridge -net "$ns" vlan add dev "$brdev" vid $VID1 pvid untagged self
+++
+++	if [[ "$vlan" == "ad" ]]; then
+++		ip -net "$ns" link add link "$brdev" name "$brdev.$VID2" type vlan id $VID2
+++		brdev="$brdev.$VID2"
+++		ip -net "$ns" link set "$brdev" up
+++	fi
+++
+++	if [[ "$arg" != "noaddress" ]]; then
+++		add_addr "$i" "$brdev"
+++	fi
+++}
+++
+++unset_client()
+++{
+++	local i=$1
+++	local ns=${nsa[$i]}
+++	local vdev="${vethcl[$i]}"
+++	local brdev="$BRCL"
+++
+++	ip -net "$ns" link del "$brdev" type bridge 2>/dev/null
+++	ip -net "$ns" link del "$vdev.$VID1" 2>/dev/null
+++}
+++
+++add_pppoe()
+++{
+++	local i1=$1
+++	local i2=$2
+++	local dev1=$3
+++	local dev2=$4
+++	local desc=$5
+++	local ns1=${nsa[$i1]}
+++	local ns2=${nsa[$i2]}
+++
+++	ppp1=0
+++	while [ -n "$(ip -net "$ns1" link show ppp$ppp1 2>/dev/null)" ]
+++	do ((ppp1++)); done
+++	echo "noauth defaultroute noipdefault unit $ppp1" >"$pppoeserveroptions"
+++	ppp1="ppp$ppp1"
+++
+++	if ! ip netns exec "$ns1" pppoe-server -k -L "${AD4[$i1]}" -R "${AD4[$i2]}" \
+++		-I "$dev1" -X "$pppoeserverpid" -O "$pppoeserveroptions" >/dev/null; then
+++		echo "ERROR: $desc: failed to setup pppoe server" 1>&2
+++		return 1
+++	fi
+++
+++	if ! ip netns exec "$ns2" pppd plugin pppoe.so nic-"$dev2" persist holdoff 0 noauth \
+++		defaultroute noipdefault noaccomp nodeflate noproxyarp nopcomp \
+++		novj novjccomp linkname "selftest-$$" >/dev/null; then
+++		echo "ERROR: $desc: failed to setup pppoe client" 1>&2
+++		return 1
+++	fi
+++
+++	if ! wait_ping "$i1" "$i2" "56" "4"; then
+++		echo "ERROR: $desc: failed to setup functional pppoe connection" 1>&2
+++		return 1
+++	fi
+++
+++	ppp2=$(tail -n 1 < "/run/pppd/ppp-selftest-$$.pid")
+++
+++	ip -net "$ns1" addr add "${AD6[$i1]}/64" dev "$ppp1" nodad
+++	ip -net "$ns2" addr add "${AD6[$i2]}/64" dev "$ppp2" nodad
+++
+++	return 0
+++}
+++
+++del_pppoe()
+++{
+++	local i1=$1
+++	local i2=$2
+++	local dev1=$3
+++	local dev2=$4
+++	local ns1=${nsa[$i1]}
+++	local ns2=${nsa[$i2]}
+++	local i serverpid clientpid
+++
+++	serverpid="$(head -n 1 < "$pppoeserverpid")"
+++	clientpid="$(head -n 1 < "/run/pppd/ppp-selftest-$$.pid")"
+++
+++	[[ -n "$ppp1" ]] && ip -net "$ns1" addr del "${AD6[$i1]}/64" dev "$ppp1"
+++	[[ -n "$ppp2" ]] && ip -net "$ns2" addr del "${AD6[$i2]}/64" dev "$ppp2"
+++
+++	for i in $(seq 1 $((PING_TIMEOUT * 5 ))); do
+++		if ip -net "$ns2" link show dev "$ppp2" 1>/dev/null 2>/dev/null; then
+++			kill -9 "$clientpid" 2>/dev/null
+++		elif ip -net "$ns1" link show dev "$ppp1" 1>/dev/null 2>/dev/null; then
+++			kill -SIGTERM "$serverpid" 2>/dev/null
+++		else return 0
+++		fi
+++		sleep 0.2
+++	done
+++	echo "ERROR: failed to remove pppoe connection" 1>&2
+++	return 1
+++}
+++
+++# shellcheck disable=SC2329
+++listener_ready()
+++{
+++	local ns=$1
+++	local ipv=$2
+++
+++	ss -N "$ns" --ipv"$ipv" -lnt -o "sport = :8080" | grep -q 8080
+++}
+++
+++test_path() {
+++	local type=$1
+++	local i1=$2
+++	local i2=$3
+++	local dofast=$4
+++	local desc=$5
+++	local ns1=${nsa[$i1]}
+++	local ns2=${nsa[$i2]}
+++	local i=-1
+++	local lret=0
+++	local ads=""
+++	local ipv ad a lpid bytes error
+++
+++	if    [ -n "$do_ipv4" ]; then ads="${AD4[$i2]}"
+++	elif  [ -n "$do_ipv6" ]; then ads="${AD6[$i2]}"
+++	else  ads="${AD4[$i2]} ${AD6[$i2]}"
+++	fi
+++	for ad in $ads; do
+++		((i++))
+++		if [[ "$ad" =~ ":" ]]
+++		then ipv="6"; a="[${ad}]"
+++		else ipv="4"; a="${ad}"
+++		fi
+++
+++		# ip netns exec "$nsrt" nft reset counters >/dev/null
+++		# But on some systems this results in 4GB values in packet and byte count, so:
+++		(echo "flush ruleset"; ip netns exec "$nsrt" nft --stateless list ruleset) | \
+++			ip netns exec "$nsrt" nft -f -
+++
+++		if [[ "$type" == "frag" ]]; then
+++			if ! wait_ping "$i1" "$i2" "$pingsize" "$ipv"; then
+++				error[i]="fragmented ip broken"
+++			fi
+++
+++			bytes=$(ip netns exec "$nsrt" nft list counter $family filter "checkall" | \
+++					grep "packets" | cut -d' ' -f4)
+++
+++			if [ "$bytes" -lt "$pingsize" ]; then
+++				error[i]="established bytes $bytes < $pingsize"
+++				continue
+++			fi
+++
+++		elif [[ "$type" == "tcp" ]]; then
+++			rm -f "$file1out" "$file2out"
+++
+++			timeout "$SOCAT_TIMEOUT" ip netns exec "$ns2" \
+++					socat TCP$ipv-LISTEN:8080,reuseaddr \
+++						STDIO <"$filein" >"$file2out" 2>/dev/null &
+++			lpid=$!
+++			busywait 1000 listener_ready "$ns2" "$ipv"
+++
+++			timeout "$SOCAT_TIMEOUT" ip netns exec "$ns1" \
+++					socat TCP$ipv:"$a":8080 \
+++						STDIO <"$filein" >"$file1out" 2>/dev/null
+++
+++			if ! wait $lpid; then
+++				error[i]="tcp broken"
+++				continue
+++			fi
+++			if ! cmp "$filein" "$file1out" >/dev/null 2>&1; then
+++				error[i]="file mismatch to ${ad}"
+++				continue
+++			fi
+++			if ! cmp "$filein" "$file2out" >/dev/null 2>&1; then
+++				error[i]="file mismatch from ${ad}"
+++				continue
+++			fi
+++
+++			bytes=$(ip netns exec "$nsrt" nft list counter $family filter "check" | \
+++					grep "packets" | cut -d' ' -f4)
+++
+++			if [ -z "$dofast" ] && [ "$bytes" -lt "$((2 * filesize))" ]; then
+++				error[i]="established bytes $bytes < $((2 * filesize))"
+++				continue
+++			fi
+++			if [ -n "$dofast" ] && [ "$bytes" -gt "$filesize" ]; then
+++				# Significant reduction of bytes expected
+++				error[i]="counted bytes $bytes > $filesize"
+++				continue
+++			fi
+++		fi
+++	done
+++
+++	if [ -n "${error[0]}" ]; then
+++		if [[ "${error[0]}" == "${error[1]}" ]]; then
+++			error[0]="$desc: ipv4/6: ${error[0]}"
+++			error[1]=""
+++		else
+++			error[0]="$desc: ipv4: ${error[0]}"
+++		fi
+++	fi
+++	if [ -n "${error[1]}" ]; then
+++		error[1]="$desc: ipv6: ${error[1]}"
+++	fi
+++
+++	for i in 0 1; do
+++		if [ -n "${error[i]}" ]; then
+++			if is_known_issue "$desc: ${error[i]}"; then
+++				echo "WARN:  ${error[i]}" 1>&2
+++				lret=$((lret | 1))
+++			else
+++				echo "ERROR: ${error[i]}" 1>&2
+++				lret=$((lret | 2))
+++			fi
+++		fi
+++	done
+++	if [ $lret -eq 0 ]; then
+++		echo "PASS:  $desc"
+++	fi
+++	return $(( lret & 2 ))
+++}
+++
+++known_issues=(
+++'*unaware bridge,*with double q vlan encaps,*testing fragmented*'             # 1
+++'*unaware bridge,*with 802.1ad vlan encaps,*testing fragmented*'              # 1
+++'*unaware bridge,*with pppoe encap,*testing fragmented*'                      # 1
+++'*unaware bridge,*with pppoe-in-q encaps,*testing fragmented*'                # 1
+++'*unaware bridge,*with double q vlan encaps,*without fastpath*established*'   # 1
+++'*unaware bridge,*with 802.1ad vlan encaps,*without fastpath*established*'    # 1
+++'*unaware bridge,*with pppoe encap,*without fastpath*established*'            # 1
+++'*unaware bridge,*with pppoe-in-q encaps,*without fastpath*established*'      # 1
+++'*forward,*without vlan-device, without vlan encap,*with *fastpath:*counted*' # 2
+++'*forward,*without vlan-device, with vlan encap,*with *fastpath:*tcp broken*' # 3
+++'*forward,*with vlan-device, without vlan encap,*with *fastpath:*counted*'    # 4
+++)
+++
+++is_known_issue() {
+++	local err=$1
+++	[ -n "$werror" ] && return 1
+++	for issue in "${known_issues[@]}"; do
+++		# shellcheck disable=SC2053
+++		[[ "$err" == $issue ]] && return 0
+++	done
+++	return 1
+++}
+++
+++test_paths() {
+++	local i1=$1
+++	local i2=$2
+++	local desc=$3
+++
+++	if ! setup_nftables "$i1" "$i2"; then
+++		echo "ERROR: $desc: cannot setup nftables" 1>&2
+++		return 1
+++	fi
+++	if [[ "$desc" == "unaware bridge,"* ]]; then
+++		if ! test_path "frag" "$i1" "$i2" "" "$desc testing fragmented"; then
+++			return 1
+++		fi
+++	fi
+++
+++	if ! test_path "tcp" "$i1" "$i2" "" "$desc without fastpath"; then
+++		return 1
+++	fi
+++
+++	if ! setup_fastpath "$i1" "$i2" "" 2>/dev/null; then
+++		return 0
+++	fi
+++	if ! test_path "tcp" "$i1" "$i2" "fast" "$desc with fastpath"; then
+++		return 1
+++	fi
+++
+++	if ! setup_fastpath "$i1" "$i2" "hw" 2>/dev/null; then
+++		return 0
+++	fi
+++	if ! test_path "tcp" "$i1" "$i2" "fast" "$desc with hw_fastpath"; then
+++		return 1
+++	fi
+++
+++	return 0
+++
+++}
+++
+++add_masq()
+++{
+++	if [[ $family != "bridge" ]]; then
+++		ip netns exec "$nsrt" nft -f - <<-EOF
+++		table ip nat {
+++		    chain postrouting {
+++		        type nat hook postrouting priority 0;
+++		        oifname ${BRWAN} masquerade
+++		    }
+++		}
+++		EOF
+++	else
+++		return 0
+++	fi
+++}
+++
+++add_zone()
+++{
+++	local devs=$1
+++
+++	if [[ $family == "bridge" ]]; then
+++		ip netns exec "$nsrt" nft -f - <<-EOF
+++		table ${family} filter {
+++		    chain preroutingzones {
+++		        type filter hook prerouting priority -300;
+++		        iif ${devs} ct zone set 23 # For tags other then single vlan (bridged)
+++		    }
+++		}
+++		EOF
+++	fi
+++}
+++
+++setup_nftables()
+++{
+++	local devs="{ ${vethrt[$1]} , ${vethrt[$2]} }"
+++	local i1=$1
+++	local i2=$2
+++
+++	ip netns exec "$nsrt" nft flush ruleset
+++
+++	if ! add_masq; then
+++		return 1
+++	fi
+++
+++	add_zone "${devs}" 2>/dev/null
+++
+++	ip netns exec "$nsrt" nft -f - <<-EOF
+++	table ${family} filter {
+++	    counter checkall { }
+++	    counter check { }
+++	    chain prerouting {
+++	        type filter hook prerouting priority 0; policy accept;
+++	        ct state established counter name "checkall"
+++	        ct state established ip  saddr ${AD4[$i1]} tcp dport 8080 counter name "check"
+++	        ct state established ip  saddr ${AD4[$i2]} tcp sport 8080 counter name "check"
+++	        ct state established ip6 saddr ${AD6[$i1]} tcp dport 8080 counter name "check"
+++	        ct state established ip6 saddr ${AD6[$i2]} tcp sport 8080 counter name "check"
+++	    }
+++	}
+++	EOF
+++}
+++
+++setup_fastpath()
+++{
+++	local devs="{ ${vethrt[$1]} , ${vethrt[$2]} }"
+++	local arg=$3
+++	local flags=""
+++
+++	[[ "$arg" == "hw" ]] && flags="flags offload"
+++
+++	ip netns exec "$nsrt" nft flush ruleset
+++
+++	if ! add_masq; then
+++		return 1
+++	fi
+++
+++	add_zone "${devs}" 2>/dev/null
+++
+++	ip netns exec "$nsrt" nft -f - <<-EOF
+++	table ${family} filter {
+++	    counter check { }
+++	    flowtable f {
+++	        hook ingress priority filter
+++	        devices = ${devs}
+++	        ${flags}
+++	    }
+++	    chain forward {
+++	        type filter hook forward priority 0; policy accept;
+++	        counter name "check"
+++	        meta l4proto tcp # For tags other then single vlan (bridged)
+++	        ct state established flow add @f
+++	    }
+++	}
+++	EOF
+++}
+++
+++test_unaware_bridge()
+++{
+++	local lret=0
+++	local i
+++
+++	for i in $LAN1 $LAN2; do
+++		set_client "$i" none
+++	done
+++
+++	test_paths $LAN1 $LAN2 "unaware bridge, without encaps,            "
+++	lret=$((lret | $?))
+++
+++	for i in $LAN1 $LAN2; do
+++		set_client "$i" q
+++	done
+++
+++	test_paths $LAN1 $LAN2 "unaware bridge, with single vlan encap,    "
+++	lret=$((lret | $?))
+++
+++	for i in $LAN1 $LAN2; do
+++		set_client "$i" qq
+++	done
+++
+++	# Skip testing double tagged packets on real hardware
+++	if [ -n "$lan_all_veth" ] || [ -n "$noskip" ]; then
+++
+++	test_paths $LAN1 $LAN2 "unaware bridge, with double q vlan encaps, "
+++	lret=$((lret | $?))
+++
+++	for i in $LAN1 $LAN2; do
+++		set_client "$i" ad
+++	done
+++
+++	test_paths $LAN1 $LAN2 "unaware bridge, with 802.1ad vlan encaps,  "
+++	lret=$((lret | $?))
+++
+++	fi
+++	# End Skip testing double tagged packets
+++
+++	if [ -n "$(command -v pppd 2>/dev/null)" ] &&
+++	   [ -n "$(command -v pppoe-server 2>/dev/null)" ]; then
+++	# Start pppoe
+++
+++	for i in $LAN1 $LAN2; do
+++		set_client "$i" none noaddress
+++	done
+++
+++	if add_pppoe $LAN1 $LAN2 "$BRCL" "$BRCL" "unaware bridge, with pppoe encap"; then
+++		test_paths $LAN1 $LAN2 "unaware bridge, with pppoe encap,          "
+++		lret=$((lret | $?))
+++	fi
+++
+++	del_pppoe $LAN1 $LAN2 "$BRCL" "$BRCL"
+++	lret=$((lret | $?))
+++
+++	for i in $LAN1 $LAN2; do
+++		set_client "$i" q noaddress
+++	done
+++
+++	if add_pppoe $LAN1 $LAN2 "$BRCL" "$BRCL" "unaware bridge, with pppoe-in-q encaps"; then
+++		test_paths $LAN1 $LAN2 "unaware bridge, with pppoe-in-q encaps,    "
+++		lret=$((lret | $?))
+++	fi
+++
+++	del_pppoe $LAN1 $LAN2 "$BRCL" "$BRCL"
+++	lret=$((lret | $?))
+++
+++	# End pppoe
+++	fi
+++
+++	for i in $LAN1 $LAN2; do
+++		unset_client "$i"
+++	done
+++	return $lret
+++}
+++
+++test_aware_bridge()
+++{
+++	local lret=0
+++	local i
+++
+++	for i in $LAN1 $LAN2; do
+++		bridge -net "$nsrt" vlan add dev "${vethrt[$i]}" vid $VID1 pvid untagged
+++		set_client "$i" none
+++	done
+++	test_paths $LAN1 $LAN2 "aware bridge,   without/without vlan encap,"
+++	lret=$((lret | $?))
+++
+++	i=$LAN1
+++	bridge -net "$nsrt" vlan del dev "${vethrt[$i]}" vid $VID1 pvid untagged
+++	bridge -net "$nsrt" vlan add dev "${vethrt[$i]}" vid $VID1
+++	set_client $i q
+++
+++	test_paths $LAN1 $LAN2 "aware bridge,   with/without vlan encap,   "
+++	lret=$((lret | $?))
+++
+++	i=$LAN2
+++	bridge -net "$nsrt" vlan del dev "${vethrt[$i]}" vid $VID1 pvid untagged
+++	bridge -net "$nsrt" vlan add dev "${vethrt[$i]}" vid $VID1
+++	set_client $i q
+++
+++	test_paths $LAN1 $LAN2 "aware bridge,   with/with vlan encap,      "
+++	lret=$((lret | $?))
+++
+++	i=$LAN1
+++	bridge -net "$nsrt" vlan del dev "${vethrt[$i]}" vid $VID1
+++	bridge -net "$nsrt" vlan add dev "${vethrt[$i]}" vid $VID1 pvid untagged
+++	set_client $i none
+++
+++	test_paths $LAN1 $LAN2 "aware bridge,   without/with vlan encap,   "
+++	lret=$((lret | $?))
+++
+++	i=$LAN1
+++	bridge -net "$nsrt" vlan del dev "${vethrt[$i]}" vid $VID1 pvid untagged
+++	unset_client $i
+++	i=$LAN2
+++	bridge -net "$nsrt" vlan del dev "${vethrt[$i]}" vid $VID1
+++	unset_client $i
+++
+++	return $lret
+++}
+++
+++test_forward_without_vlandev()
+++{
+++	local wo=$1
+++	local lret=0
+++	local i
+++
+++	[[ "$wo" == "" ]] && wo="without"
+++
+++	for i in $LAN1 $LAN2; do
+++		bridge -net "$nsrt" vlan add dev "${vethrt[$i]}" vid $VID1 pvid untagged
+++		set_client "$i" none
+++	done
+++
+++	test_paths $LAN1 $WAN "forward,        $wo vlan-device, without vlan encap, client1,"
+++	lret=$((lret | $?))
+++	if [ -z "$lan_all_veth" ] || [ -n "$noskip" ]; then
+++	test_paths $LAN2 $WAN "forward,        $wo vlan-device, without vlan encap, client2,"
+++	lret=$((lret | $?))
+++	fi
+++
+++	for i in $LAN1 $LAN2; do
+++	bridge -net "$nsrt" vlan del dev "${vethrt[$i]}" vid $VID1 pvid untagged
+++	bridge -net "$nsrt" vlan add dev "${vethrt[$i]}" vid $VID1
+++	set_client "$i" q
+++	done
+++
+++	test_paths $LAN1 $WAN "forward,        $wo vlan-device, with vlan encap,    client1,"
+++	lret=$((lret | $?))
+++	if [ -z "$lan_all_veth" ] || [ -n "$noskip" ]; then
+++	test_paths $LAN2 $WAN "forward,        $wo vlan-device, with vlan encap,    client2,"
+++	lret=$((lret | $?))
+++	fi
+++
+++	for i in $LAN1 $LAN2; do
+++		bridge -net "$nsrt" vlan del dev "${vethrt[$i]}" vid $VID1
+++		unset_client "$i"
+++	done
+++	return $lret
+++}
+++
+++test_forward_with_vlandev()
+++{
+++	test_forward_without_vlandev "with"
+++	return $?
+++}
+++
+++ret=0
+++### Start Initial Setup ###
+++
+++for i in 4 6; do
+++	ip netns exec "$nsrt" sysctl -q net.ipv$i.conf.all.forwarding=1
+++done
+++
+++### Use brwan to make sure software fastpath is ###
+++###         direct xmit in other direction also ###
+++
+++ip -net "$nsrt" link add $BRWAN type bridge
+++ret=$((ret | $?))
+++ip -net "$nsrt" link set $BRWAN up
+++ret=$((ret | $?))
+++if [ $ret -ne 0 ]; then
+++	echo "SKIP: Can't create bridge"
+++	exit "$ksft_skip"
+++fi
+++
+++# If both lan clients are veth-devices, only test 1 in the forward path
+++if [ -z "${vethcl[$LAN1]}" ] && [ -z "${vethcl[$LAN2]}" ]; then
+++	lan_all_veth=1
+++fi
+++
+++for i in $WAN $LAN1 $LAN2; do
+++	ns="${nsa[$i]}"
+++	if [ -z "${vethcl[$i]}" ]; then
+++		vethcl[i]="veth${i}cl"
+++		vethrt[i]="veth${i}rt"
+++		ip link add   "${vethcl[$i]}" netns "$ns" type veth \
+++		    peer name "${vethrt[$i]}" netns "$nsrt"
+++		ret=$((ret | $?))
+++	else # Use pair of interconnected hardware interfaces
+++		ip link set "${vethrt[$i]}" netns "$nsrt"
+++		ret=$((ret | $?))
+++		ip link set "${vethcl[$i]}" netns "$ns"
+++		ret=$((ret | $?))
+++	fi
+++done
+++if [ $ret -ne 0 ]; then
+++	echo "SKIP: (v)eth pairs cannot be used"
+++	exit "$ksft_skip"
+++fi
+++
+++if [ -n "$showtree" ]; then
+++	cat <<-EOF
+++	Setup:
+++	            CLIENT 0
+++	              ${vethcl[$WAN]}
+++	                |
+++	              ${vethrt[$WAN]}
+++	               WAN
+++	              ROUTER
+++	          LAN1      LAN2
+++	$(printf "%14.14s" "${vethrt[$LAN1]}")      ${vethrt[$LAN2]}
+++	           |          |
+++	$(printf "%14.14s" "${vethcl[$LAN1]}")      ${vethcl[$LAN2]}
+++	      CLIENT 1      CLIENT 2
+++
+++	EOF
+++fi
+++
+++for n in nsclientwan nsclientlan; do
+++	routerside=""; clientside=""
+++	for i in $WAN $LAN1 $LAN2; do
+++		ns="${nsa[$i]}"
+++		[[ "$ns" != "$n"* ]] && continue
+++		mac=$(check_mac "$ns" "${vethcl[$i]}" "$routerside $clientside")
+++		ret=$((ret | $?))
+++		clientside+=" $mac"
+++		mac=$(check_mac "$nsrt" "${vethrt[$i]}" "$clientside")
+++		ret=$((ret | $?))
+++		routerside+=" $mac"
+++	done
+++done
+++if [ $ret -ne 0 ]; then
+++	echo "SKIP: conflicting mac address"
+++	exit "$ksft_skip"
+++fi
+++
+++set_pair_link up $WAN $LAN1 $LAN2
+++ret=$((ret | $?))
+++if [ $ret -ne 0 ]; then
+++	echo "SKIP: setting (v)eth pairs link up failed"
+++	exit "$ksft_skip"
+++fi
+++
+++i=$WAN
+++ip -net "$nsrt" link set "${vethrt[$i]}" master $BRWAN
+++set_client $i none
+++add_addr $ADWAN "$BRWAN"
+++
+++family="bridge"
+++if ! setup_nftables $LAN1 $LAN2 2>/dev/null; then
+++	echo "INFO: Cannot add nftables table $family"
+++	tests[1]=""; tests[2]=""
+++fi
+++family="inet"
+++if ! setup_nftables $WAN $LAN1 2>/dev/null; then
+++	echo "INFO: Cannot add nftables table $family"
+++	tests[3]=""; tests[4]=""
+++fi
+++
+++### End Initial Setup ###
+++
+++if [ -n "${tests[1]}" ]; then
+++	# Setup brlan as vlan unaware bridge
+++	family="bridge"
+++	ip -net "$nsrt" link add $BRLAN type bridge
+++	ip -net "$nsrt" link set $BRLAN up
+++	for i in $LAN1 $LAN2; do
+++		ip -net "$nsrt" link set "${vethrt[$i]}" master $BRLAN
+++	done
+++	test_unaware_bridge
+++	ret=$((ret | $?))
+++	ip -net "$nsrt" link del $BRLAN type bridge
+++fi
+++
+++if [ -n "${tests[2]}" ] || [ -n "${tests[3]}" ] || [ -n "${tests[4]}" ]; then
+++	# Setup brlan as vlan aware bridge
+++	family="bridge"
+++
+++	ip -net "$nsrt" link add $BRLAN type bridge vlan_filtering 1 vlan_default_pvid 0
+++	ip -net "$nsrt" link set $BRLAN up
+++	bridge -net "$nsrt" vlan add dev $BRLAN vid $VID1 pvid untagged self
+++	add_addr $ADLAN "$BRLAN"
+++	for i in $LAN1 $LAN2; do
+++		ip -net "$nsrt" link set "${vethrt[$i]}" master $BRLAN
+++	done
+++
+++	if [ -n "${tests[2]}" ]; then
+++		test_aware_bridge
+++		ret=$((ret | $?))
+++	fi
+++
+++	family="inet"
+++
+++	if [ -n "${tests[3]}" ]; then
+++		test_forward_without_vlandev
+++		ret=$((ret | $?))
+++	fi
+++
+++	if [ -n "${tests[4]}" ]; then
+++		# Setup vlan-device linked to brlan master port
+++		del_addr $ADLAN "$BRLAN"
+++		ip -net "$nsrt" link set $BRLAN down
+++		bridge -net "$nsrt" vlan del dev $BRLAN vid $VID1 pvid untagged self
+++		bridge -net "$nsrt" vlan add dev $BRLAN vid $VID1 self
+++		ip -net "$nsrt" link add link $BRLAN name $BRLAN.$VID1 type vlan id $VID1
+++		ip -net "$nsrt" link set $BRLAN up
+++		ip -net "$nsrt" link set "$BRLAN.$VID1" up
+++		add_addr $ADLAN "$BRLAN.$VID1"
+++		test_forward_with_vlandev
+++		ret=$((ret | $?))
+++	fi
+++
+++	ip -net "$nsrt" link del $BRLAN type bridge
+++fi
+++
+++### Finish tests ###
+++
+++ip -net "$nsrt" link del $BRWAN type bridge
+++
+++for i in $WAN $LAN1 $LAN2; do
+++	unset_client "$i"
+++done
+++
+++set_pair_link down $WAN $LAN1 $LAN2
+++
+++for i in $WAN $LAN1 $LAN2; do
+++	ns="${nsa[$i]}"
+++	if [[ "${vethcl[$i]:0:4}" != "veth" ]]; then
+++		ip netns exec "$ns" ip link set "${vethcl[$i]}" netns 1
+++	fi
+++	if [[ "${vethrt[$i]:0:4}" != "veth" ]]; then
+++		ip netns exec "$nsrt" ip link set "${vethrt[$i]}" netns 1
+++	fi
+++done
+++
+++if [ $ret -eq 0 ]; then
+++	echo "PASS:  all tests passed"
+++else
+++	echo "ERROR: bridge fastpath test has failed"
+++fi
+++
+++exit $ret
++-- 
++2.55.0
++
+
+From 7158f8d509403038aaa8fe9c707f82a12e9beebc Mon Sep 17 00:00:00 2001
+From: Bohdan Chubuk <chbgdn@gmail.com>
+Date: Wed, 1 Jul 2026 07:56:39 +0300
+Subject: [PATCH 03/12] generic: pending-6.18: set hw_ifidx in bridge flow
+ offload path
+
+The bridge fastpath (nft_dev_fill_bridge_path) was not setting
+out.hw_ifidx, leaving it 0. The PPE hardware offload engine on
+airoha and similar SoCs uses hw_ifidx to determine the egress
+port. Without it flow entries get bound but no packets are
+forwarded.
+
+The routed path sets hw_ifindex (later copied to hw_ifidx by
+flow_offload_route_init), so mirror that assignment in the
+bridge path.
+
+Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+---
+ ...ow_offload-Set-hw_ifidx-in-nft_dev_f.patch | 35 +++++++++++++++++++
+ 1 file changed, 35 insertions(+)
+ create mode 100644 target/linux/generic/pending-6.18/675-13-netfilter-nft_flow_offload-Set-hw_ifidx-in-nft_dev_f.patch
+
+diff --git a/target/linux/generic/pending-6.18/675-13-netfilter-nft_flow_offload-Set-hw_ifidx-in-nft_dev_f.patch b/target/linux/generic/pending-6.18/675-13-netfilter-nft_flow_offload-Set-hw_ifidx-in-nft_dev_f.patch
+new file mode 100644
+index 00000000..dabcb5fb
+--- /dev/null
++++ b/target/linux/generic/pending-6.18/675-13-netfilter-nft_flow_offload-Set-hw_ifidx-in-nft_dev_f.patch
+@@ -0,0 +1,35 @@
++From d88d2dc0bbb5d664d0c0d77c1a74e0bd73b1a888 Mon Sep 17 00:00:00 2001
++From: Bohdan Chubuk <chbgdn@gmail.com>
++Date: Sun, 26 Jul 2026 01:26:35 +0300
++Subject: [PATCH 13/14] netfilter: nft_flow_offload: Set hw_ifidx in
++ nft_dev_fill_bridge_path()
++
++When filling the bridge forwarding path, set the hw_ifidx field to
++the hw_outdev ifindex. This is needed for the hardware offload path
++in flow_offload_redirect() which uses hw_ifidx to find the redirect
++device. Without this, hw_ifidx defaults to 0 and breaks PPE HW
++offload on Airoha and MediaTek platforms.
++
++Based on original backport fix for 6.18.y kernel where hw_ifidx has
++not yet been consolidated into ifidx (unlike newer upstream).
++
++Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
++---
++ net/netfilter/nf_flow_table_path.c | 1 +
++ 1 file changed, 1 insertion(+)
++
++diff --git a/net/netfilter/nf_flow_table_path.c b/net/netfilter/nf_flow_table_path.c
++index 72f50547c924..5e43724257d8 100644
++--- a/net/netfilter/nf_flow_table_path.c
+++++ b/net/netfilter/nf_flow_table_path.c
++@@ -352,6 +352,7 @@ static int nft_dev_fill_bridge_path(struct flow_offload *flow,
++ 	ether_addr_copy(th[dir].tuple.out.h_source, src_ha);
++ 	ether_addr_copy(th[dir].tuple.out.h_dest, dst_ha);
++ 	th[dir].tuple.out.ifidx = info.outdev->ifindex;
+++	th[dir].tuple.out.hw_ifidx = info.hw_outdev->ifindex;
++ 	th[dir].tuple.xmit_type = FLOW_OFFLOAD_XMIT_DIRECT;
++ 
++ 	return 0;
++-- 
++2.55.0
++
+
+From 1369d779aca27b5461da0e5a0fb0ed099f204fd7 Mon Sep 17 00:00:00 2001
+From: Bohdan Chubuk <chbgdn@gmail.com>
+Date: Wed, 1 Jul 2026 10:17:58 +0300
+Subject: [PATCH 04/12] generic: pending-6.18: remove WARN_ON from
+ dev_fill_bridge_path()
+
+When the bridge floods a packet (unknown unicast, broadcast, multicast),
+br_fill_forward_path may find an FDB entry that points back to the same
+port. This triggers WARN_ON_ONCE(last_dev == ctx->dev) even though it is
+a legitimate scenario.
+
+Replace the WARN_ON with a silent return -1 so the flow offload caller
+simply skips offloading the flow instead of spamming the kernel log.
+
+Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+---
+ ...ove-WARN_ON-from-dev_fill_bridge_pat.patch | 35 +++++++++++++++++++
+ 1 file changed, 35 insertions(+)
+ create mode 100644 target/linux/generic/pending-6.18/675-14-net-core-dev-Remove-WARN_ON-from-dev_fill_bridge_pat.patch
+
+diff --git a/target/linux/generic/pending-6.18/675-14-net-core-dev-Remove-WARN_ON-from-dev_fill_bridge_pat.patch b/target/linux/generic/pending-6.18/675-14-net-core-dev-Remove-WARN_ON-from-dev_fill_bridge_pat.patch
+new file mode 100644
+index 00000000..e08e9d01
+--- /dev/null
++++ b/target/linux/generic/pending-6.18/675-14-net-core-dev-Remove-WARN_ON-from-dev_fill_bridge_pat.patch
+@@ -0,0 +1,35 @@
++From a39c553e6901358d6bf049892b516f57a7dcf2dc Mon Sep 17 00:00:00 2001
++From: Bohdan Chubuk <chbgdn@gmail.com>
++Date: Wed, 1 Jul 2026 10:16:34 +0300
++Subject: [PATCH 14/14] net: core: dev: Remove WARN_ON from
++ dev_fill_bridge_path()
++
++When the bridge floods a packet (unknown unicast, broadcast, multicast),
++br_fill_forward_path may find an FDB entry that points back to the same
++port. This triggers the WARN_ON_ONCE(last_dev == ctx->dev) check even
++though it is a legitimate scenario.
++
++Replace the WARN_ON with a silent return -1. The flow offload caller
++will simply skip offloading this flow, which is the correct behavior.
++
++Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
++---
++ net/core/dev.c | 2 +-
++ 1 file changed, 1 insertion(+), 1 deletion(-)
++
++diff --git a/net/core/dev.c b/net/core/dev.c
++index 02897f10fbd9..ae24efe97f49 100644
++--- a/net/core/dev.c
+++++ b/net/core/dev.c
++@@ -802,7 +802,7 @@ int dev_fill_bridge_path(struct net_device_path_ctx *ctx,
++ 	if (br_dev->netdev_ops->ndo_fill_forward_path(ctx, path) < 0)
++ 		return -1;
++ 
++-	if (!ctx->dev || WARN_ON_ONCE(last_dev == ctx->dev))
+++	if (!ctx->dev || last_dev == ctx->dev)
++ 		return -1;
++ 
++ 	return dev_fill_forward_path_common(ctx, stack);
++-- 
++2.55.0
++
+
+From a0a38c56d71543f82dd9c9e039267cae9443e190 Mon Sep 17 00:00:00 2001
+From: Bohdan Chubuk <chbgdn@gmail.com>
+Date: Wed, 1 Jul 2026 06:22:52 +0300
+Subject: [PATCH 05/12] airoha: fix 915-01 DSCP offload patch for bridge
+ fastpath changes
+
+Update Lorenzo Bianconi DSCP offload (915-01) to apply correctly
+after nft_flow_offload bridge fastpath refactoring (675-10).
+
+Move nft_flow_set_dscp() calls before the routing/bridge flow init
+split so they work for both routing and bridge flows.
+
+Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+---
+ ...netfilter-flowtable-Add-the-capability-to-offloa.patch | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/target/linux/airoha/patches-6.18/915-01-net-netfilter-flowtable-Add-the-capability-to-offloa.patch b/target/linux/airoha/patches-6.18/915-01-net-netfilter-flowtable-Add-the-capability-to-offloa.patch
+index 414f6935..a25a639a 100644
+--- a/target/linux/airoha/patches-6.18/915-01-net-netfilter-flowtable-Add-the-capability-to-offloa.patch
++++ b/target/linux/airoha/patches-6.18/915-01-net-netfilter-flowtable-Add-the-capability-to-offloa.patch
+@@ -141,10 +141,10 @@ Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+ @@ -129,6 +151,9 @@ static void nft_flow_offload_eval(const
+  	if (!flow)
+  		goto err_flow_alloc;
+- 
++
+ +	nft_flow_set_dscp(pkt, flow, dir);
+ +	nft_flow_set_dscp(pkt, flow, !dir);
+ +
+- 	flow_offload_route_init(flow, &route);
+- 	if (tcph)
+- 		flow_offload_ct_tcp(ct);
++	if (routing)
++		flow_offload_route_init(flow, &route);
++	else
+
+From ec12b10d680cf9a9c6637aeb021eddbf52817e8b Mon Sep 17 00:00:00 2001
+From: Bohdan Chubuk <chbgdn@gmail.com>
+Date: Sat, 4 Jul 2026 01:56:30 +0300
+Subject: [PATCH 06/12] netfilter: hack-6.18: handle DEV_PATH_BR_VLAN_KEEP_HW
+ in xt_FLOWOFFLOAD
+
+The DEV_PATH_BR_VLAN_KEEP_HW bridge vlan mode was introduced by
+pending-6.18/675-04 (DEV_PATH_BR_VLAN_KEEP_HW). The 650 hack
+patch creates the entire xt_FLOWOFFLOAD.c file from scratch,
+including a switch on bridge.vlan_mode that must handle all
+enum values to avoid a -Werror=switch build failure.
+
+Add the missing case for DEV_PATH_BR_VLAN_KEEP_HW, treating it
+the same as DEV_PATH_BR_VLAN_KEEP (no action in software path).
+
+Also prepend the missing From-hash header line so the embedded
+patch carries the git headers required by the contribution
+guidelines.
+
+Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+---
+ .../hack-6.18/650-netfilter-add-xt_FLOWOFFLOAD-target.patch   | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/target/linux/generic/hack-6.18/650-netfilter-add-xt_FLOWOFFLOAD-target.patch b/target/linux/generic/hack-6.18/650-netfilter-add-xt_FLOWOFFLOAD-target.patch
+index ea23c135..4ec4bf0c 100644
+--- a/target/linux/generic/hack-6.18/650-netfilter-add-xt_FLOWOFFLOAD-target.patch
++++ b/target/linux/generic/hack-6.18/650-netfilter-add-xt_FLOWOFFLOAD-target.patch
+@@ -115,7 +115,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
+  {
+ --- /dev/null
+ +++ b/net/netfilter/xt_FLOWOFFLOAD.c
+-@@ -0,0 +1,734 @@
++@@ -0,0 +1,736 @@
+ +/*
+ + * Copyright (C) 2018-2021 Felix Fietkau <nbd@nbd.name>
+ + *
+@@ -466,6 +466,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
+ +				break;
+ +			case DEV_PATH_BR_VLAN_KEEP:
+ +				break;
+++			case DEV_PATH_BR_VLAN_KEEP_HW:
+++				break;
+ +			}
+ +			break;
+ +		default:
+
+From 9283b2f44b09d9771d37bc5fa297884c46474eb4 Mon Sep 17 00:00:00 2001
+From: Bohdan Chubuk <chbgdn@gmail.com>
+Date: Wed, 1 Jul 2026 08:24:50 +0300
+Subject: [PATCH 07/12] firewall4: add bridge flowtable support
+
+Generate a bridge-family flowtable (table bridge fw4, flowtable fb)
+when the offload device list contains bridge ports. The bridge
+flowtable is required for hardware offload of L2-forwarded traffic
+via nft_flow_offload (bridge fastpath).
+
+Uses /sys/class/net/<dev>/brport to detect bridge ports among
+the configured flowtable devices.
+
+Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+---
+ package/network/config/firewall4/Makefile     |  2 +-
+ .../001-add-bridge-flowtable-support.patch    | 74 +++++++++++++++++++
+ 2 files changed, 75 insertions(+), 1 deletion(-)
+ create mode 100644 package/network/config/firewall4/patches/001-add-bridge-flowtable-support.patch
+
+diff --git a/package/network/config/firewall4/Makefile b/package/network/config/firewall4/Makefile
+index ccd5b73c..a13b5fc3 100644
+--- a/package/network/config/firewall4/Makefile
++++ b/package/network/config/firewall4/Makefile
+@@ -5,7 +5,7 @@
+ include $(TOPDIR)/rules.mk
+ 
+ PKG_NAME:=firewall4
+-PKG_RELEASE:=1
++PKG_RELEASE:=2
+ 
+ PKG_SOURCE_PROTO:=git
+ PKG_SOURCE_URL=$(PROJECT_GIT)/project/firewall4.git
+diff --git a/package/network/config/firewall4/patches/001-add-bridge-flowtable-support.patch b/package/network/config/firewall4/patches/001-add-bridge-flowtable-support.patch
+new file mode 100644
+index 00000000..cf324e84
+--- /dev/null
++++ b/package/network/config/firewall4/patches/001-add-bridge-flowtable-support.patch
+@@ -0,0 +1,74 @@
++From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
++From: Bohdan Chubuk <chbgdn@gmail.com>
++Date: Wed, 1 Jul 2026 08:24:50 +0300
++Subject: [PATCH] firewall4: add bridge flowtable support
++
++Generate a bridge-family flowtable (table bridge fw4, flowtable fb)
++when the offload device list contains bridge ports, so L2-forwarded
++traffic can be offloaded via nft_flow_offload.
++
++Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
++---
++--- a/root/usr/share/ucode/fw4.uc	2026-07-01 09:54:35.812914268 +0300
+++++ b/root/usr/share/ucode/fw4.uc	2026-07-01 09:54:55.802938364 +0300
++@@ -575,6 +575,26 @@
++ 		return false;
++ 	},
++ 
+++	check_bridge_flowtable: function() {
+++		for (let item in nft_json_command("list", "flowtables", "bridge"))
+++			if (item.flowtable?.table == "fw4" && item.flowtable?.name == "fb")
+++				return true;
+++
+++		return false;
+++	},
+++
+++	resolve_bridge_devices: function(devices) {
+++		let bridge_devs = [];
+++
+++		for (let dev in devices)
+++			if (fs.access(`/sys/class/net/${dev}/brport`))
+++				push(bridge_devs, dev);
+++			else if (fs.access(`/sys/class/net/${dev}/bridge`))
+++				push(bridge_devs, dev);
+++
+++		return bridge_devs;
+++	},
+++
++ 	read_state: function() {
++ 		let fd = fs.open(STATEFILE, "r");
++ 		let state = null;
++--- a/root/usr/share/firewall4/templates/ruleset.uc	2026-07-01 09:54:35.813882416 +0300
+++++ b/root/usr/share/firewall4/templates/ruleset.uc	2026-07-01 09:55:01.833025066 +0300
++@@ -469,4 +469,31 @@
++ 	}
++ {% fw4.includes('table-append') %}
++ }
+++table bridge fw4
+++flush table bridge fw4
+++{% if (fw4.check_bridge_flowtable()): %}
+++delete flowtable bridge fw4 fb
+++{% endif %}
+++
+++{% let bridge_devices = fw4.resolve_bridge_devices(flowtable_devices); %}
+++{% if (length(bridge_devices) > 0): %}
+++table bridge fw4 {
+++	#
+++	# Bridge flowtable
+++	#
+++	flowtable fb {
+++		hook ingress priority 0;
+++		devices = {{ fw4.set(bridge_devices, true) }};
+++		counter;
+++{% if (fw4.default_option("flow_offloading_hw")): %}
+++		flags offload;
+++{% endif %}
+++	}
+++
+++	chain forward {
+++		type filter hook forward priority filter; policy accept;
+++		meta l4proto { tcp, udp } flow offload @fb;
+++	}
+++}
+++{% endif %}
++ {% fw4.includes('ruleset-append') %}
+
+From 54cb169a2ffa86facc525143861011d26390c9cd Mon Sep 17 00:00:00 2001
+From: Bohdan Chubuk <chbgdn@gmail.com>
+Date: Wed, 1 Jul 2026 09:21:24 +0300
+Subject: [PATCH 08/12] airoha: an7581: add kmod-nf-conntrack-bridge to default
+ packages
+
+Enable bridge connection tracking by default on the AN7581 target.
+Required for nft_flow_offload bridge fastpath hardware offload.
+
+Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+---
+ target/linux/airoha/an7581/target.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/target/linux/airoha/an7581/target.mk b/target/linux/airoha/an7581/target.mk
+index 70f79b4c..6ac77875 100644
+--- a/target/linux/airoha/an7581/target.mk
++++ b/target/linux/airoha/an7581/target.mk
+@@ -6,7 +6,7 @@ KERNELNAME:=Image dtbs
+ FEATURES+=pwm audio
+ 
+ DEFAULT_PACKAGES += \
+-	airoha-en7581-npu-firmware uboot-envtools
++	airoha-en7581-npu-firmware kmod-nf-conntrack-bridge uboot-envtools
+ 
+ define Target/Description
+ 	Build firmware images for Airoha an7581 ARM based boards.
+
+From 2b16ff4dd55499371033f5a3ee3c01c84cd1c874 Mon Sep 17 00:00:00 2001
+From: Bohdan Chubuk <chbgdn@gmail.com>
+Date: Sat, 4 Jul 2026 01:08:33 +0300
+Subject: [PATCH 09/12] mediatek: filogic: add kmod-nf-conntrack-bridge to
+ default packages
+
+Enable bridge connection tracking by default on the filogic target.
+Required for nft_flow_offload bridge fastpath hardware offload.
+
+Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+---
+ target/linux/mediatek/filogic/target.mk | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/target/linux/mediatek/filogic/target.mk b/target/linux/mediatek/filogic/target.mk
+index 1df1acc6..1354c47e 100644
+--- a/target/linux/mediatek/filogic/target.mk
++++ b/target/linux/mediatek/filogic/target.mk
+@@ -2,7 +2,9 @@ ARCH:=aarch64
+ SUBTARGET:=filogic
+ BOARDNAME:=Filogic 8x0 (MT798x)
+ CPU_TYPE:=cortex-a53
+-DEFAULT_PACKAGES += fitblk kmod-crypto-hw-safexcel wpad-basic-mbedtls uboot-envtools
++DEFAULT_PACKAGES += \
++	fitblk kmod-crypto-hw-safexcel kmod-nf-conntrack-bridge \
++	wpad-basic-mbedtls uboot-envtools
+ KERNELNAME:=Image dtbs
+ DEFAULT_PROFILE:=openwrt_one
+ 
+
+From a562ae4c3838eaeb86d12553185d89632ea91f96 Mon Sep 17 00:00:00 2001
+From: Bohdan Chubuk <chbgdn@gmail.com>
+Date: Fri, 3 Jul 2026 23:21:42 +0300
+Subject: [PATCH 10/12] airoha: an7581: add hotplug script to reload firewall
+ on bridge port add
+
+At boot the firewall starts before hostapd creates wireless interfaces
+and before DSA ports are enslaved to the bridge. Without a reload fw4
+cannot discover them as bridge members and bridge hardware offload via
+the PPE will only cover wired-to-wired flows.
+
+The net hotplug event fires when a wireless interface (phy*-ap* or
+ap-mld*) appears. If the device is not yet present in the bridge
+flowtable, a firewall reload is triggered.
+
+Serialised via flock so concurrent hotplug events (multiple SSIDs)
+result in a single reload after all interfaces are up.
+
+Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+---
+ .../etc/hotplug.d/net/50-fw4-bridge-reload    | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+ create mode 100644 target/linux/airoha/an7581/base-files/etc/hotplug.d/net/50-fw4-bridge-reload
+
+diff --git a/target/linux/airoha/an7581/base-files/etc/hotplug.d/net/50-fw4-bridge-reload b/target/linux/airoha/an7581/base-files/etc/hotplug.d/net/50-fw4-bridge-reload
+new file mode 100644
+index 00000000..2a5b2dd3
+--- /dev/null
++++ b/target/linux/airoha/an7581/base-files/etc/hotplug.d/net/50-fw4-bridge-reload
+@@ -0,0 +1,19 @@
++#!/bin/sh
++
++[ "$ACTION" = "add" ] || exit 0
++
++case "${DEVICENAME}" in
++	phy*-ap*|ap-mld*) ;;
++	*) exit 0 ;;
++esac
++
++nft list flowtable bridge fw4 fb 2>/dev/null | grep -qw "\"${DEVICENAME}\"" && exit 0
++
++(
++	exec 9>/var/lock/fw4-bridge-reload.lock
++	flock -n 9 || exit 0
++	sleep 2
++	/etc/init.d/firewall reload >/dev/null 2>&1
++) &
++
++exit 0
+
+From 43697739768720d7124927d60039fedb29674984 Mon Sep 17 00:00:00 2001
+From: Bohdan Chubuk <chbgdn@gmail.com>
+Date: Fri, 3 Jul 2026 23:23:50 +0300
+Subject: [PATCH 11/12] mediatek: filogic: add hotplug script to reload
+ firewall on bridge port add
+
+At boot the firewall starts before hostapd creates wireless interfaces
+and before DSA ports are enslaved to the bridge. Without a reload fw4
+cannot discover them as bridge members and bridge hardware offload via
+the PPE will only cover wired-to-wired flows.
+
+The net hotplug event fires when a wireless interface (phy*-ap* or
+ap-mld*) appears. If the device is not yet present in the bridge
+flowtable, a firewall reload is triggered.
+
+Serialised via flock so concurrent hotplug events (multiple SSIDs)
+result in a single reload after all interfaces are up.
+
+Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+---
+ .../etc/hotplug.d/net/50-fw4-bridge-reload    | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+ create mode 100644 target/linux/mediatek/filogic/base-files/etc/hotplug.d/net/50-fw4-bridge-reload
+
+diff --git a/target/linux/mediatek/filogic/base-files/etc/hotplug.d/net/50-fw4-bridge-reload b/target/linux/mediatek/filogic/base-files/etc/hotplug.d/net/50-fw4-bridge-reload
+new file mode 100644
+index 00000000..2a5b2dd3
+--- /dev/null
++++ b/target/linux/mediatek/filogic/base-files/etc/hotplug.d/net/50-fw4-bridge-reload
+@@ -0,0 +1,19 @@
++#!/bin/sh
++
++[ "$ACTION" = "add" ] || exit 0
++
++case "${DEVICENAME}" in
++	phy*-ap*|ap-mld*) ;;
++	*) exit 0 ;;
++esac
++
++nft list flowtable bridge fw4 fb 2>/dev/null | grep -qw "\"${DEVICENAME}\"" && exit 0
++
++(
++	exec 9>/var/lock/fw4-bridge-reload.lock
++	flock -n 9 || exit 0
++	sleep 2
++	/etc/init.d/firewall reload >/dev/null 2>&1
++) &
++
++exit 0
+
+From a1aa29810e704799e1e7a434d540fbeb73e80f34 Mon Sep 17 00:00:00 2001
+From: Bohdan Chubuk <chbgdn@gmail.com>
+Date: Fri, 18 Sep 2026 19:03:33 +0300
+Subject: [PATCH 12/12] generic: refresh kernel 6.18 patches
+
+Refreshed patches by running `make target/linux/refresh` for airoha
+against 6.18.52 after the bridge fastpath rebase. Besides hunk
+renumbering this normalizes the bridge series to refresh-clean state
+and carries the knock-on renumbering in 699/700/721/731 caused by the
+insertions above them.
+
+Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+---
+ ...nf_ip-6-_checksum-_partial-correct-d.patch | 15 +++-----
+ ...-Add-conntrack-double-vlan-and-pppoe.patch | 37 ++++++++-----------
+ ...ow_offload-Add-DEV_PATH_MTK_WDMA-to-.patch |  9 +----
+ ...e-Introduce-DEV_PATH_BR_VLAN_KEEP_HW.patch | 19 ++--------
+ ...lling-forward-path-from-port-to-port.patch | 29 +++++----------
+ ...et-core-dev-Add-dev_fill_bridge_path.patch | 11 +-----
+ ...w_table_offload-Add-nf_flow_rule_bri.patch | 11 +-----
+ ...w_table_inet-Add-nf_flowtable_type-f.patch | 11 ++----
+ ...ow_offload-nft_flow_offload_eval-che.patch |  9 +----
+ ...ow_offload-Add-NFPROTO_BRIDGE-to-val.patch |  7 +---
+ ...ow_offload-Add-bridgeflow-to-nft_flo.patch | 19 +++-------
+ ...sts-netfilter-Add-bridge_fastpath.sh.patch |  8 ----
+ ...ow_offload-Set-hw_ifidx-in-nft_dev_f.patch |  7 +---
+ ...ove-WARN_ON-from-dev_fill_bridge_pat.patch |  7 +---
+ ...ow_offload-handle-netdevice-events-f.patch |  3 +-
+ 15 files changed, 55 insertions(+), 147 deletions(-)
+
+diff --git a/target/linux/generic/pending-6.18/675-01-netfilter-utils-nf_ip-6-_checksum-_partial-correct-d.patch b/target/linux/generic/pending-6.18/675-01-netfilter-utils-nf_ip-6-_checksum-_partial-correct-d.patch
+index 0ae22099..a49840a3 100644
+--- a/target/linux/generic/pending-6.18/675-01-netfilter-utils-nf_ip-6-_checksum-_partial-correct-d.patch
++++ b/target/linux/generic/pending-6.18/675-01-netfilter-utils-nf_ip-6-_checksum-_partial-correct-d.patch
+@@ -27,8 +27,6 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+  net/netfilter/utils.c | 52 ++++++++++++++++++++++++++++++++++++++-----
+  1 file changed, 46 insertions(+), 6 deletions(-)
+ 
+-diff --git a/net/netfilter/utils.c b/net/netfilter/utils.c
+-index 008419db815a..ce3ac5af6a59 100644
+ --- a/net/netfilter/utils.c
+ +++ b/net/netfilter/utils.c
+ @@ -10,9 +10,18 @@
+@@ -50,7 +48,7 @@ index 008419db815a..ce3ac5af6a59 100644
+  	switch (skb->ip_summed) {
+  	case CHECKSUM_COMPLETE:
+  		if (hook != NF_INET_PRE_ROUTING && hook != NF_INET_LOCAL_IN)
+-@@ -35,6 +44,7 @@ __sum16 nf_ip_checksum(struct sk_buff *skb, unsigned int hook,
++@@ -35,6 +44,7 @@ __sum16 nf_ip_checksum(struct sk_buff *s
+  						       protocol, 0);
+  		csum = __skb_checksum_complete(skb);
+  	}
+@@ -58,7 +56,7 @@ index 008419db815a..ce3ac5af6a59 100644
+  	return csum;
+  }
+  EXPORT_SYMBOL(nf_ip_checksum);
+-@@ -44,29 +54,47 @@ static __sum16 nf_ip_checksum_partial(struct sk_buff *skb, unsigned int hook,
++@@ -44,29 +54,47 @@ static __sum16 nf_ip_checksum_partial(st
+  				      unsigned int dataoff, unsigned int len,
+  				      u8 protocol)
+  {
+@@ -109,7 +107,7 @@ index 008419db815a..ce3ac5af6a59 100644
+  	switch (skb->ip_summed) {
+  	case CHECKSUM_COMPLETE:
+  		if (hook != NF_INET_PRE_ROUTING && hook != NF_INET_LOCAL_IN)
+-@@ -89,7 +117,9 @@ __sum16 nf_ip6_checksum(struct sk_buff *skb, unsigned int hook,
++@@ -89,7 +117,9 @@ __sum16 nf_ip6_checksum(struct sk_buff *
+  						      skb_checksum(skb, 0,
+  								   dataoff, 0))));
+  		csum = __skb_checksum_complete(skb);
+@@ -119,7 +117,7 @@ index 008419db815a..ce3ac5af6a59 100644
+  	return csum;
+  }
+  EXPORT_SYMBOL(nf_ip6_checksum);
+-@@ -98,14 +128,23 @@ static __sum16 nf_ip6_checksum_partial(struct sk_buff *skb, unsigned int hook,
++@@ -98,14 +128,23 @@ static __sum16 nf_ip6_checksum_partial(s
+  				       unsigned int dataoff, unsigned int len,
+  				       u8 protocol)
+  {
+@@ -145,7 +143,7 @@ index 008419db815a..ce3ac5af6a59 100644
+  		fallthrough;
+  	case CHECKSUM_NONE:
+  		hsum = skb_checksum(skb, 0, dataoff, 0);
+-@@ -115,8 +154,9 @@ static __sum16 nf_ip6_checksum_partial(struct sk_buff *skb, unsigned int hook,
++@@ -115,8 +154,9 @@ static __sum16 nf_ip6_checksum_partial(s
+  							 protocol,
+  							 csum_sub(0, hsum)));
+  		skb->ip_summed = CHECKSUM_NONE;
+@@ -156,6 +154,3 @@ index 008419db815a..ce3ac5af6a59 100644
+  	return csum;
+  };
+  
+--- 
+-2.55.0
+-
+diff --git a/target/linux/generic/pending-6.18/675-02-netfilter-bridge-Add-conntrack-double-vlan-and-pppoe.patch b/target/linux/generic/pending-6.18/675-02-netfilter-bridge-Add-conntrack-double-vlan-and-pppoe.patch
+index 75572611..4a59f4fd 100644
+--- a/target/linux/generic/pending-6.18/675-02-netfilter-bridge-Add-conntrack-double-vlan-and-pppoe.patch
++++ b/target/linux/generic/pending-6.18/675-02-netfilter-bridge-Add-conntrack-double-vlan-and-pppoe.patch
+@@ -27,8 +27,6 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+  net/bridge/netfilter/nf_conntrack_bridge.c | 203 ++++++++++++++++++---
+  2 files changed, 182 insertions(+), 27 deletions(-)
+ 
+-diff --git a/include/linux/netfilter_bridge.h b/include/linux/netfilter_bridge.h
+-index 743475ca7e9d..51e80b14fe3f 100644
+ --- a/include/linux/netfilter_bridge.h
+ +++ b/include/linux/netfilter_bridge.h
+ @@ -10,6 +10,12 @@ struct nf_bridge_frag_data {
+@@ -44,8 +42,6 @@ index 743475ca7e9d..51e80b14fe3f 100644
+  };
+  
+  #if IS_ENABLED(CONFIG_BRIDGE_NETFILTER)
+-diff --git a/net/bridge/netfilter/nf_conntrack_bridge.c b/net/bridge/netfilter/nf_conntrack_bridge.c
+-index 6482de4d8750..c9df82627669 100644
+ --- a/net/bridge/netfilter/nf_conntrack_bridge.c
+ +++ b/net/bridge/netfilter/nf_conntrack_bridge.c
+ @@ -16,6 +16,7 @@
+@@ -56,7 +52,7 @@ index 6482de4d8750..c9df82627669 100644
+  #include <linux/netfilter/nf_tables.h>
+  #include <net/netfilter/nf_tables.h>
+  
+-@@ -143,7 +144,8 @@ static void br_skb_cb_restore(struct sk_buff *skb,
++@@ -143,7 +144,8 @@ static void br_skb_cb_restore(struct sk_
+  }
+  
+  static unsigned int nf_ct_br_defrag4(struct sk_buff *skb,
+@@ -66,7 +62,7 @@ index 6482de4d8750..c9df82627669 100644
+  {
+  	u16 zone_id = NF_CT_DEFAULT_ZONE_ID;
+  	enum ip_conntrack_info ctinfo;
+-@@ -154,6 +156,9 @@ static unsigned int nf_ct_br_defrag4(struct sk_buff *skb,
++@@ -154,6 +156,9 @@ static unsigned int nf_ct_br_defrag4(str
+  	if (!ip_is_fragment(ip_hdr(skb)))
+  		return NF_ACCEPT;
+  
+@@ -76,7 +72,7 @@ index 6482de4d8750..c9df82627669 100644
+  	ct = nf_ct_get(skb, &ctinfo);
+  	if (ct)
+  		zone_id = nf_ct_zone_id(nf_ct_zone(ct), CTINFO2DIR(ctinfo));
+-@@ -166,6 +171,8 @@ static unsigned int nf_ct_br_defrag4(struct sk_buff *skb,
++@@ -166,6 +171,8 @@ static unsigned int nf_ct_br_defrag4(str
+  	if (!err) {
+  		br_skb_cb_restore(skb, &cb, IPCB(skb)->frag_max_size);
+  		skb->ignore_df = 1;
+@@ -85,7 +81,7 @@ index 6482de4d8750..c9df82627669 100644
+  		return NF_ACCEPT;
+  	}
+  
+-@@ -173,7 +180,8 @@ static unsigned int nf_ct_br_defrag4(struct sk_buff *skb,
++@@ -173,7 +180,8 @@ static unsigned int nf_ct_br_defrag4(str
+  }
+  
+  static unsigned int nf_ct_br_defrag6(struct sk_buff *skb,
+@@ -95,7 +91,7 @@ index 6482de4d8750..c9df82627669 100644
+  {
+  #if IS_ENABLED(CONFIG_NF_DEFRAG_IPV6)
+  	u16 zone_id = NF_CT_DEFAULT_ZONE_ID;
+-@@ -182,6 +190,9 @@ static unsigned int nf_ct_br_defrag6(struct sk_buff *skb,
++@@ -182,6 +190,9 @@ static unsigned int nf_ct_br_defrag6(str
+  	const struct nf_conn *ct;
+  	int err;
+  
+@@ -105,7 +101,7 @@ index 6482de4d8750..c9df82627669 100644
+  	ct = nf_ct_get(skb, &ctinfo);
+  	if (ct)
+  		zone_id = nf_ct_zone_id(nf_ct_zone(ct), CTINFO2DIR(ctinfo));
+-@@ -195,7 +206,12 @@ static unsigned int nf_ct_br_defrag6(struct sk_buff *skb,
++@@ -195,7 +206,12 @@ static unsigned int nf_ct_br_defrag6(str
+  		return NF_STOLEN;
+  
+  	br_skb_cb_restore(skb, &cb, IP6CB(skb)->frag_max_size);
+@@ -119,7 +115,7 @@ index 6482de4d8750..c9df82627669 100644
+  #else
+  	return NF_ACCEPT;
+  #endif
+-@@ -237,59 +253,140 @@ static int nf_ct_br_ipv6_check(const struct sk_buff *skb)
++@@ -237,59 +253,140 @@ static int nf_ct_br_ipv6_check(const str
+  	return 0;
+  }
+  
+@@ -269,17 +265,17 @@ index 6482de4d8750..c9df82627669 100644
+ -		return ret;
+ +	if (ret == NF_ACCEPT)
+ +		ret = nf_conntrack_in(skb, &bridge_state);
+- 
+--	return nf_conntrack_in(skb, &bridge_state);
+++
+ +do_not_track:
+ +	if (offset && ret == NF_ACCEPT)
+ +		skb_reset_network_header(skb);
+-+
++ 
++-	return nf_conntrack_in(skb, &bridge_state);
+ +	return ret;
+  }
+  
+  static unsigned int nf_ct_bridge_in(void *priv, struct sk_buff *skb,
+-@@ -341,12 +438,22 @@ nf_ct_bridge_refrag(struct sk_buff *skb, const struct nf_hook_state *state,
++@@ -342,12 +439,22 @@ nf_ct_bridge_refrag(struct sk_buff *skb,
+  				  struct sk_buff *))
+  {
+  	struct nf_bridge_frag_data data;
+@@ -303,7 +299,7 @@ index 6482de4d8750..c9df82627669 100644
+  	case htons(ETH_P_IP):
+  		nf_br_ip_fragment(state->net, state->sk, skb, &data, output);
+  		break;
+-@@ -367,11 +474,49 @@ static int nf_ct_bridge_frag_restore(struct sk_buff *skb,
++@@ -368,11 +475,49 @@ static int nf_ct_bridge_frag_restore(str
+  {
+  	int err;
+  
+@@ -332,7 +328,7 @@ index 6482de4d8750..c9df82627669 100644
+ +		ph->hdr.sid  = data->pppoe_sid;
+ +		ph->hdr.length = htons(skb->len + 2 - PPPOE_SES_HLEN);
+ +		ph->proto = data->pppoe_proto;
+- 	}
+++	}
+ +
+ +	if (data->inner_vlan_present) {
+ +		struct vlan_hdr *vhdr;
+@@ -348,7 +344,7 @@ index 6482de4d8750..c9df82627669 100644
+ +		vhdr = (struct vlan_hdr *)(skb->data);
+ +		vhdr->h_vlan_TCI = data->inner_vlan_tci;
+ +		vhdr->h_vlan_encapsulated_proto = data->inner_vlan_proto;
+-+	}
++ 	}
+ +
+ +	err = skb_cow_head(skb, ETH_HLEN);
+ +	if (err)
+@@ -357,7 +353,7 @@ index 6482de4d8750..c9df82627669 100644
+  	if (data->vlan_present)
+  		__vlan_hwaccel_put_tag(skb, data->vlan_proto, data->vlan_tci);
+  	else if (skb_vlan_tag_present(skb))
+-@@ -381,6 +526,10 @@ static int nf_ct_bridge_frag_restore(struct sk_buff *skb,
++@@ -382,6 +527,10 @@ static int nf_ct_bridge_frag_restore(str
+  	skb_reset_mac_header(skb);
+  
+  	return 0;
+@@ -368,6 +364,3 @@ index 6482de4d8750..c9df82627669 100644
+  }
+  
+  static int nf_ct_bridge_refrag_post(struct net *net, struct sock *sk,
+--- 
+-2.55.0
+-
+diff --git a/target/linux/generic/pending-6.18/675-03-netfilter-nft_flow_offload-Add-DEV_PATH_MTK_WDMA-to-.patch b/target/linux/generic/pending-6.18/675-03-netfilter-nft_flow_offload-Add-DEV_PATH_MTK_WDMA-to-.patch
+index 19ee3328..da7969c4 100644
+--- a/target/linux/generic/pending-6.18/675-03-netfilter-nft_flow_offload-Add-DEV_PATH_MTK_WDMA-to-.patch
++++ b/target/linux/generic/pending-6.18/675-03-netfilter-nft_flow_offload-Add-DEV_PATH_MTK_WDMA-to-.patch
+@@ -16,11 +16,9 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+  net/netfilter/nf_flow_table_path.c | 5 +++++
+  1 file changed, 5 insertions(+)
+ 
+-diff --git a/net/netfilter/nf_flow_table_path.c b/net/netfilter/nf_flow_table_path.c
+-index 76d4ff145439..a452d6591b4f 100644
+ --- a/net/netfilter/nf_flow_table_path.c
+ +++ b/net/netfilter/nf_flow_table_path.c
+-@@ -103,6 +103,7 @@ static void nft_dev_path_info(const struct net_device_path_stack *stack,
++@@ -103,6 +103,7 @@ static void nft_dev_path_info(const stru
+  		switch (path->type) {
+  		case DEV_PATH_ETHERNET:
+  		case DEV_PATH_DSA:
+@@ -28,7 +26,7 @@ index 76d4ff145439..a452d6591b4f 100644
+  		case DEV_PATH_VLAN:
+  		case DEV_PATH_PPPOE:
+  			info->indev = path->dev;
+-@@ -115,6 +116,10 @@ static void nft_dev_path_info(const struct net_device_path_stack *stack,
++@@ -115,6 +116,10 @@ static void nft_dev_path_info(const stru
+  				i = stack->num_paths;
+  				break;
+  			}
+@@ -39,6 +37,3 @@ index 76d4ff145439..a452d6591b4f 100644
+  
+  			/* DEV_PATH_VLAN and DEV_PATH_PPPOE */
+  			if (info->num_encaps >= NF_FLOW_TABLE_ENCAP_MAX) {
+--- 
+-2.55.0
+-
+diff --git a/target/linux/generic/pending-6.18/675-04-bridge-Introduce-DEV_PATH_BR_VLAN_KEEP_HW.patch b/target/linux/generic/pending-6.18/675-04-bridge-Introduce-DEV_PATH_BR_VLAN_KEEP_HW.patch
+index 67c066c5..f139ccc3 100644
+--- a/target/linux/generic/pending-6.18/675-04-bridge-Introduce-DEV_PATH_BR_VLAN_KEEP_HW.patch
++++ b/target/linux/generic/pending-6.18/675-04-bridge-Introduce-DEV_PATH_BR_VLAN_KEEP_HW.patch
+@@ -23,11 +23,9 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+  net/netfilter/nf_flow_table_path.c | 10 ++++++++++
+  4 files changed, 23 insertions(+), 6 deletions(-)
+ 
+-diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
+-index 43ea96ecedc3..aba9d7dfe170 100644
+ --- a/include/linux/netdevice.h
+ +++ b/include/linux/netdevice.h
+-@@ -893,6 +893,7 @@ struct net_device_path {
++@@ -895,6 +895,7 @@ struct net_device_path {
+  				DEV_PATH_BR_VLAN_TAG,
+  				DEV_PATH_BR_VLAN_UNTAG,
+  				DEV_PATH_BR_VLAN_UNTAG_HW,
+@@ -35,11 +33,9 @@ index 43ea96ecedc3..aba9d7dfe170 100644
+  			}		vlan_mode;
+  			u16		vlan_id;
+  			__be16		vlan_proto;
+-diff --git a/net/bridge/br_device.c b/net/bridge/br_device.c
+-index 525d4eccd194..da28125746d5 100644
+ --- a/net/bridge/br_device.c
+ +++ b/net/bridge/br_device.c
+-@@ -423,6 +423,7 @@ static int br_fill_forward_path(struct net_device_path_ctx *ctx,
++@@ -423,6 +423,7 @@ static int br_fill_forward_path(struct n
+  	case DEV_PATH_BR_VLAN_UNTAG:
+  		ctx->num_vlans--;
+  		break;
+@@ -47,11 +43,9 @@ index 525d4eccd194..da28125746d5 100644
+  	case DEV_PATH_BR_VLAN_KEEP:
+  		break;
+  	}
+-diff --git a/net/bridge/br_vlan.c b/net/bridge/br_vlan.c
+-index ce72b837ff8e..29f947b8c54f 100644
+ --- a/net/bridge/br_vlan.c
+ +++ b/net/bridge/br_vlan.c
+-@@ -1489,12 +1489,17 @@ int br_vlan_fill_forward_path_mode(struct net_bridge *br,
++@@ -1489,12 +1489,17 @@ int br_vlan_fill_forward_path_mode(struc
+  	if (!(v->flags & BRIDGE_VLAN_INFO_UNTAGGED))
+  		return 0;
+  
+@@ -75,11 +69,9 @@ index ce72b837ff8e..29f947b8c54f 100644
+  
+  	return 0;
+  }
+-diff --git a/net/netfilter/nf_flow_table_path.c b/net/netfilter/nf_flow_table_path.c
+-index a452d6591b4f..77d0899320dc 100644
+ --- a/net/netfilter/nf_flow_table_path.c
+ +++ b/net/netfilter/nf_flow_table_path.c
+-@@ -142,6 +142,16 @@ static void nft_dev_path_info(const struct net_device_path_stack *stack,
++@@ -142,6 +142,16 @@ static void nft_dev_path_info(const stru
+  			case DEV_PATH_BR_VLAN_UNTAG_HW:
+  				info->ingress_vlans |= BIT(info->num_encaps - 1);
+  				break;
+@@ -96,6 +88,3 @@ index a452d6591b4f..77d0899320dc 100644
+  			case DEV_PATH_BR_VLAN_TAG:
+  				if (info->num_encaps >= NF_FLOW_TABLE_ENCAP_MAX) {
+  					info->indev = NULL;
+--- 
+-2.55.0
+-
+diff --git a/target/linux/generic/pending-6.18/675-05-bridge-Add-filling-forward-path-from-port-to-port.patch b/target/linux/generic/pending-6.18/675-05-bridge-Add-filling-forward-path-from-port-to-port.patch
+index 8946b6cd..0eb90ea1 100644
+--- a/target/linux/generic/pending-6.18/675-05-bridge-Add-filling-forward-path-from-port-to-port.patch
++++ b/target/linux/generic/pending-6.18/675-05-bridge-Add-filling-forward-path-from-port-to-port.patch
+@@ -21,11 +21,9 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+  net/bridge/br_vlan.c    |  6 +++++-
+  3 files changed, 21 insertions(+), 6 deletions(-)
+ 
+-diff --git a/net/bridge/br_device.c b/net/bridge/br_device.c
+-index da28125746d5..07110dc66705 100644
+ --- a/net/bridge/br_device.c
+ +++ b/net/bridge/br_device.c
+-@@ -385,16 +385,25 @@ static int br_del_slave(struct net_device *dev, struct net_device *slave_dev)
++@@ -385,16 +385,25 @@ static int br_del_slave(struct net_devic
+  static int br_fill_forward_path(struct net_device_path_ctx *ctx,
+  				struct net_device_path *path)
+  {
+@@ -38,37 +36,35 @@ index da28125746d5..07110dc66705 100644
+ -		return -1;
+ +	if (netif_is_bridge_port(ctx->dev)) {
+ +		struct net_device *br_dev;
+-+
++ 
++-	br = netdev_priv(ctx->dev);
+ +		br_dev = netdev_master_upper_dev_get_rcu((struct net_device *)ctx->dev);
+ +		if (!br_dev)
+ +			return -1;
+  
+--	br = netdev_priv(ctx->dev);
++-	br_vlan_fill_forward_path_pvid(br, ctx, path);
+ +		src = br_port_get_rcu(ctx->dev);
+ +		br = netdev_priv(br_dev);
+ +	} else {
+ +		src = NULL;
+ +		br = netdev_priv(ctx->dev);
+ +	}
+- 
+--	br_vlan_fill_forward_path_pvid(br, ctx, path);
+++
+ +	br_vlan_fill_forward_path_pvid(br, src, ctx, path);
+  
+  	f = br_fdb_find_rcu(br, ctx->daddr, path->bridge.vlan_id);
+  	if (!f)
+-diff --git a/net/bridge/br_private.h b/net/bridge/br_private.h
+-index b9b2981c4841..02744bd14b38 100644
+ --- a/net/bridge/br_private.h
+ +++ b/net/bridge/br_private.h
+-@@ -1616,6 +1616,7 @@ bool br_vlan_can_enter_range(const struct net_bridge_vlan *v_curr,
+- 			     const struct net_bridge_vlan *range_end);
++@@ -1617,6 +1617,7 @@ bool br_vlan_can_enter_range(const struc
++ 			     u16 pvid);
+  
+  void br_vlan_fill_forward_path_pvid(struct net_bridge *br,
+ +				    struct net_bridge_port *p,
+  				    struct net_device_path_ctx *ctx,
+  				    struct net_device_path *path);
+  int br_vlan_fill_forward_path_mode(struct net_bridge *br,
+-@@ -1785,6 +1786,7 @@ static inline int nbp_get_num_vlan_infos(struct net_bridge_port *p,
++@@ -1786,6 +1787,7 @@ static inline int nbp_get_num_vlan_infos
+  }
+  
+  static inline void br_vlan_fill_forward_path_pvid(struct net_bridge *br,
+@@ -76,11 +72,9 @@ index b9b2981c4841..02744bd14b38 100644
+  						  struct net_device_path_ctx *ctx,
+  						  struct net_device_path *path)
+  {
+-diff --git a/net/bridge/br_vlan.c b/net/bridge/br_vlan.c
+-index 29f947b8c54f..24f815fae63b 100644
+ --- a/net/bridge/br_vlan.c
+ +++ b/net/bridge/br_vlan.c
+-@@ -1445,6 +1445,7 @@ int br_vlan_get_pvid_rcu(const struct net_device *dev, u16 *p_pvid)
++@@ -1445,6 +1445,7 @@ int br_vlan_get_pvid_rcu(const struct ne
+  EXPORT_SYMBOL_GPL(br_vlan_get_pvid_rcu);
+  
+  void br_vlan_fill_forward_path_pvid(struct net_bridge *br,
+@@ -88,7 +82,7 @@ index 29f947b8c54f..24f815fae63b 100644
+  				    struct net_device_path_ctx *ctx,
+  				    struct net_device_path *path)
+  {
+-@@ -1457,7 +1458,10 @@ void br_vlan_fill_forward_path_pvid(struct net_bridge *br,
++@@ -1457,7 +1458,10 @@ void br_vlan_fill_forward_path_pvid(stru
+  	if (!br_opt_get(br, BROPT_VLAN_ENABLED))
+  		return;
+  
+@@ -100,6 +94,3 @@ index 29f947b8c54f..24f815fae63b 100644
+  
+  	if (idx >= 0 &&
+  	    ctx->vlan[idx].proto == br->vlan_proto) {
+--- 
+-2.55.0
+-
+diff --git a/target/linux/generic/pending-6.18/675-06-net-core-dev-Add-dev_fill_bridge_path.patch b/target/linux/generic/pending-6.18/675-06-net-core-dev-Add-dev_fill_bridge_path.patch
+index 68d1aaf2..0be3b3ea 100644
+--- a/target/linux/generic/pending-6.18/675-06-net-core-dev-Add-dev_fill_bridge_path.patch
++++ b/target/linux/generic/pending-6.18/675-06-net-core-dev-Add-dev_fill_bridge_path.patch
+@@ -17,11 +17,9 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+  net/core/dev.c            | 66 +++++++++++++++++++++++++++++++--------
+  2 files changed, 55 insertions(+), 13 deletions(-)
+ 
+-diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
+-index aba9d7dfe170..88edd2ae485f 100644
+ --- a/include/linux/netdevice.h
+ +++ b/include/linux/netdevice.h
+-@@ -3349,6 +3349,8 @@ void dev_remove_offload(struct packet_offload *po);
++@@ -3361,6 +3361,8 @@ void dev_remove_offload(struct packet_of
+  
+  int dev_get_iflink(const struct net_device *dev);
+  int dev_fill_metadata_dst(struct net_device *dev, struct sk_buff *skb);
+@@ -30,11 +28,9 @@ index aba9d7dfe170..88edd2ae485f 100644
+  int dev_fill_forward_path(const struct net_device *dev, const u8 *daddr,
+  			  struct net_device_path_stack *stack);
+  struct net_device *dev_get_by_name(struct net *net, const char *name);
+-diff --git a/net/core/dev.c b/net/core/dev.c
+-index 8dee703a0916..02897f10fbd9 100644
+ --- a/net/core/dev.c
+ +++ b/net/core/dev.c
+-@@ -744,44 +744,84 @@ static struct net_device_path *dev_fwd_path(struct net_device_path_stack *stack)
++@@ -744,44 +744,84 @@ static struct net_device_path *dev_fwd_p
+  	return &stack->path[k];
+  }
+  
+@@ -132,6 +128,3 @@ index 8dee703a0916..02897f10fbd9 100644
+  EXPORT_SYMBOL_GPL(dev_fill_forward_path);
+  
+  /* must be called under rcu_read_lock(), as we dont take a reference */
+--- 
+-2.55.0
+-
+diff --git a/target/linux/generic/pending-6.18/675-07-netfilter-nf_flow_table_offload-Add-nf_flow_rule_bri.patch b/target/linux/generic/pending-6.18/675-07-netfilter-nf_flow_table_offload-Add-nf_flow_rule_bri.patch
+index dd270608..670bee7e 100644
+--- a/target/linux/generic/pending-6.18/675-07-netfilter-nf_flow_table_offload-Add-nf_flow_rule_bri.patch
++++ b/target/linux/generic/pending-6.18/675-07-netfilter-nf_flow_table_offload-Add-nf_flow_rule_bri.patch
+@@ -17,11 +17,9 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+  net/netfilter/nf_flow_table_offload.c | 13 +++++++++++++
+  2 files changed, 16 insertions(+)
+ 
+-diff --git a/include/net/netfilter/nf_flow_table.h b/include/net/netfilter/nf_flow_table.h
+-index e9f72d2558e9..65cf5a4d56f1 100644
+ --- a/include/net/netfilter/nf_flow_table.h
+ +++ b/include/net/netfilter/nf_flow_table.h
+-@@ -348,6 +348,9 @@ void nf_flow_table_offload_flush_cleanup(struct nf_flowtable *flowtable);
++@@ -349,6 +349,9 @@ void nf_flow_table_offload_flush_cleanup
+  int nf_flow_table_offload_setup(struct nf_flowtable *flowtable,
+  				struct net_device *dev,
+  				enum flow_block_command cmd);
+@@ -31,11 +29,9 @@ index e9f72d2558e9..65cf5a4d56f1 100644
+  int nf_flow_rule_route_ipv4(struct net *net, struct flow_offload *flow,
+  			    enum flow_offload_tuple_dir dir,
+  			    struct nf_flow_rule *flow_rule);
+-diff --git a/net/netfilter/nf_flow_table_offload.c b/net/netfilter/nf_flow_table_offload.c
+-index 4f346f51d7d7..867e552a2815 100644
+ --- a/net/netfilter/nf_flow_table_offload.c
+ +++ b/net/netfilter/nf_flow_table_offload.c
+-@@ -792,6 +792,19 @@ int nf_flow_rule_route_ipv6(struct net *net, struct flow_offload *flow,
++@@ -792,6 +792,19 @@ int nf_flow_rule_route_ipv6(struct net *
+  }
+  EXPORT_SYMBOL_GPL(nf_flow_rule_route_ipv6);
+  
+@@ -55,6 +51,3 @@ index 4f346f51d7d7..867e552a2815 100644
+  static struct nf_flow_rule *
+  nf_flow_offload_rule_alloc(struct net *net,
+  			   const struct flow_offload_work *offload,
+--- 
+-2.55.0
+-
+diff --git a/target/linux/generic/pending-6.18/675-08-netfilter-nf_flow_table_inet-Add-nf_flowtable_type-f.patch b/target/linux/generic/pending-6.18/675-08-netfilter-nf_flow_table_inet-Add-nf_flowtable_type-f.patch
+index 62631890..b1e2effd 100644
+--- a/target/linux/generic/pending-6.18/675-08-netfilter-nf_flow_table_inet-Add-nf_flowtable_type-f.patch
++++ b/target/linux/generic/pending-6.18/675-08-netfilter-nf_flow_table_inet-Add-nf_flowtable_type-f.patch
+@@ -14,11 +14,9 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+  net/netfilter/nf_flow_table_inet.c | 13 +++++++++++++
+  1 file changed, 13 insertions(+)
+ 
+-diff --git a/net/netfilter/nf_flow_table_inet.c b/net/netfilter/nf_flow_table_inet.c
+-index b0f199171932..80b238196f29 100644
+ --- a/net/netfilter/nf_flow_table_inet.c
+ +++ b/net/netfilter/nf_flow_table_inet.c
+-@@ -65,6 +65,16 @@ static int nf_flow_rule_route_inet(struct net *net,
++@@ -65,6 +65,16 @@ static int nf_flow_rule_route_inet(struc
+  	return err;
+  }
+  
+@@ -35,7 +33,7 @@ index b0f199171932..80b238196f29 100644
+  static struct nf_flowtable_type flowtable_inet = {
+  	.family		= NFPROTO_INET,
+  	.init		= nf_flow_table_init,
+-@@ -97,6 +107,7 @@ static struct nf_flowtable_type flowtable_ipv6 = {
++@@ -97,6 +107,7 @@ static struct nf_flowtable_type flowtabl
+  
+  static int __init nf_flow_inet_module_init(void)
+  {
+@@ -43,7 +41,7 @@ index b0f199171932..80b238196f29 100644
+  	nft_register_flowtable_type(&flowtable_ipv4);
+  	nft_register_flowtable_type(&flowtable_ipv6);
+  	nft_register_flowtable_type(&flowtable_inet);
+-@@ -109,6 +120,7 @@ static void __exit nf_flow_inet_module_exit(void)
++@@ -109,6 +120,7 @@ static void __exit nf_flow_inet_module_e
+  	nft_unregister_flowtable_type(&flowtable_inet);
+  	nft_unregister_flowtable_type(&flowtable_ipv6);
+  	nft_unregister_flowtable_type(&flowtable_ipv4);
+@@ -58,6 +56,3 @@ index b0f199171932..80b238196f29 100644
+ +MODULE_ALIAS_NF_FLOWTABLE(AF_BRIDGE);
+  MODULE_ALIAS_NF_FLOWTABLE(1); /* NFPROTO_INET */
+  MODULE_DESCRIPTION("Netfilter flow table mixed IPv4/IPv6 module");
+--- 
+-2.55.0
+-
+diff --git a/target/linux/generic/pending-6.18/675-09-netfilter-nft_flow_offload-nft_flow_offload_eval-che.patch b/target/linux/generic/pending-6.18/675-09-netfilter-nft_flow_offload-nft_flow_offload_eval-che.patch
+index d6c7b6a4..a5c899f2 100644
+--- a/target/linux/generic/pending-6.18/675-09-netfilter-nft_flow_offload-nft_flow_offload_eval-che.patch
++++ b/target/linux/generic/pending-6.18/675-09-netfilter-nft_flow_offload-nft_flow_offload_eval-che.patch
+@@ -16,11 +16,9 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+  net/netfilter/nft_flow_offload.c | 9 ++++++---
+  1 file changed, 6 insertions(+), 3 deletions(-)
+ 
+-diff --git a/net/netfilter/nft_flow_offload.c b/net/netfilter/nft_flow_offload.c
+-index b8f76c9057fd..ea6241a2f1eb 100644
+ --- a/net/netfilter/nft_flow_offload.c
+ +++ b/net/netfilter/nft_flow_offload.c
+-@@ -58,7 +58,7 @@ static void nft_flow_offload_eval(const struct nft_expr *expr,
++@@ -58,7 +58,7 @@ static void nft_flow_offload_eval(const
+  	struct flow_offload *flow;
+  	enum ip_conntrack_dir dir;
+  	struct nf_conn *ct;
+@@ -29,7 +27,7 @@ index b8f76c9057fd..ea6241a2f1eb 100644
+  
+  	if (nft_flow_offload_skip(pkt->skb, nft_pf(pkt)))
+  		goto out;
+-@@ -69,8 +69,11 @@ static void nft_flow_offload_eval(const struct nft_expr *expr,
++@@ -69,8 +69,11 @@ static void nft_flow_offload_eval(const
+  
+  	switch (ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.protonum) {
+  	case IPPROTO_TCP:
+@@ -43,6 +41,3 @@ index b8f76c9057fd..ea6241a2f1eb 100644
+  		if (unlikely(!tcph || tcph->fin || tcph->rst ||
+  			     !nf_conntrack_tcp_established(ct)))
+  			goto out;
+--- 
+-2.55.0
+-
+diff --git a/target/linux/generic/pending-6.18/675-10-netfilter-nft_flow_offload-Add-NFPROTO_BRIDGE-to-val.patch b/target/linux/generic/pending-6.18/675-10-netfilter-nft_flow_offload-Add-NFPROTO_BRIDGE-to-val.patch
+index 5ccc4384..efab93e8 100644
+--- a/target/linux/generic/pending-6.18/675-10-netfilter-nft_flow_offload-Add-NFPROTO_BRIDGE-to-val.patch
++++ b/target/linux/generic/pending-6.18/675-10-netfilter-nft_flow_offload-Add-NFPROTO_BRIDGE-to-val.patch
+@@ -15,11 +15,9 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+  net/netfilter/nft_flow_offload.c | 3 ++-
+  1 file changed, 2 insertions(+), 1 deletion(-)
+ 
+-diff --git a/net/netfilter/nft_flow_offload.c b/net/netfilter/nft_flow_offload.c
+-index ea6241a2f1eb..b386c5a1ab53 100644
+ --- a/net/netfilter/nft_flow_offload.c
+ +++ b/net/netfilter/nft_flow_offload.c
+-@@ -144,7 +144,8 @@ static int nft_flow_offload_validate(const struct nft_ctx *ctx,
++@@ -144,7 +144,8 @@ static int nft_flow_offload_validate(con
+  
+  	if (ctx->family != NFPROTO_IPV4 &&
+  	    ctx->family != NFPROTO_IPV6 &&
+@@ -29,6 +27,3 @@ index ea6241a2f1eb..b386c5a1ab53 100644
+  		return -EOPNOTSUPP;
+  
+  	return nft_chain_validate_hooks(ctx->chain, hook_mask);
+--- 
+-2.55.0
+-
+diff --git a/target/linux/generic/pending-6.18/675-11-netfilter-nft_flow_offload-Add-bridgeflow-to-nft_flo.patch b/target/linux/generic/pending-6.18/675-11-netfilter-nft_flow_offload-Add-bridgeflow-to-nft_flo.patch
+index a7e0e3a4..702bad69 100644
+--- a/target/linux/generic/pending-6.18/675-11-netfilter-nft_flow_offload-Add-bridgeflow-to-nft_flo.patch
++++ b/target/linux/generic/pending-6.18/675-11-netfilter-nft_flow_offload-Add-bridgeflow-to-nft_flo.patch
+@@ -22,8 +22,6 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+  net/netfilter/nft_flow_offload.c      |  20 +++-
+  3 files changed, 150 insertions(+), 5 deletions(-)
+ 
+-diff --git a/include/net/netfilter/nf_flow_table.h b/include/net/netfilter/nf_flow_table.h
+-index 65cf5a4d56f1..6211758e6cd4 100644
+ --- a/include/net/netfilter/nf_flow_table.h
+ +++ b/include/net/netfilter/nf_flow_table.h
+ @@ -14,6 +14,8 @@
+@@ -35,7 +33,7 @@ index 65cf5a4d56f1..6211758e6cd4 100644
+  struct nf_flow_rule;
+  struct flow_offload;
+  enum flow_offload_tuple_dir;
+-@@ -285,6 +287,11 @@ nf_flow_table_offload_del_cb(struct nf_flowtable *flow_table,
++@@ -286,6 +288,11 @@ nf_flow_table_offload_del_cb(struct nf_f
+  void flow_offload_route_init(struct flow_offload *flow,
+  			     struct nf_flow_route *route);
+  
+@@ -47,8 +45,6 @@ index 65cf5a4d56f1..6211758e6cd4 100644
+  int flow_offload_add(struct nf_flowtable *flow_table, struct flow_offload *flow);
+  void flow_offload_refresh(struct nf_flowtable *flow_table,
+  			  struct flow_offload *flow, bool force);
+-diff --git a/net/netfilter/nf_flow_table_path.c b/net/netfilter/nf_flow_table_path.c
+-index 77d0899320dc..72f50547c924 100644
+ --- a/net/netfilter/nf_flow_table_path.c
+ +++ b/net/netfilter/nf_flow_table_path.c
+ @@ -5,6 +5,9 @@
+@@ -61,7 +57,7 @@ index 77d0899320dc..72f50547c924 100644
+  #include <linux/netfilter/nf_conntrack_common.h>
+  #include <linux/netfilter/nf_tables.h>
+  #include <net/ip.h>
+-@@ -289,3 +292,128 @@ int nft_flow_route(const struct nft_pktinfo *pkt, const struct nf_conn *ct,
++@@ -290,3 +293,128 @@ int nft_flow_route(const struct nft_pkti
+  	return 0;
+  }
+  EXPORT_SYMBOL_GPL(nft_flow_route);
+@@ -190,8 +186,6 @@ index 77d0899320dc..72f50547c924 100644
+ +	return 0;
+ +}
+ +EXPORT_SYMBOL_GPL(flow_offload_bridge_init);
+-diff --git a/net/netfilter/nft_flow_offload.c b/net/netfilter/nft_flow_offload.c
+-index b386c5a1ab53..cb67f82245b2 100644
+ --- a/net/netfilter/nft_flow_offload.c
+ +++ b/net/netfilter/nft_flow_offload.c
+ @@ -6,6 +6,7 @@
+@@ -202,7 +196,7 @@ index b386c5a1ab53..cb67f82245b2 100644
+  #include <linux/netfilter/nf_conntrack_common.h>
+  #include <linux/netfilter/nf_tables.h>
+  #include <net/ip.h>
+-@@ -52,6 +53,7 @@ static void nft_flow_offload_eval(const struct nft_expr *expr,
++@@ -52,6 +53,7 @@ static void nft_flow_offload_eval(const
+  {
+  	struct nft_flow_offload *priv = nft_expr_priv(expr);
+  	struct nf_flowtable *flowtable = &priv->flowtable->data;
+@@ -210,7 +204,7 @@ index b386c5a1ab53..cb67f82245b2 100644
+  	struct tcphdr _tcph, *tcph = NULL;
+  	struct nf_flow_route route = {};
+  	enum ip_conntrack_info ctinfo;
+-@@ -108,14 +110,20 @@ static void nft_flow_offload_eval(const struct nft_expr *expr,
++@@ -108,14 +110,20 @@ static void nft_flow_offload_eval(const
+  		goto out;
+  
+  	dir = CTINFO2DIR(ctinfo);
+@@ -234,7 +228,7 @@ index b386c5a1ab53..cb67f82245b2 100644
+  	if (tcph)
+  		flow_offload_ct_tcp(ct);
+  
+-@@ -129,8 +137,10 @@ static void nft_flow_offload_eval(const struct nft_expr *expr,
++@@ -129,8 +137,10 @@ static void nft_flow_offload_eval(const
+  err_flow_add:
+  	flow_offload_free(flow);
+  err_flow_alloc:
+@@ -247,6 +241,3 @@ index b386c5a1ab53..cb67f82245b2 100644
+  err_flow_route:
+  	clear_bit(IPS_OFFLOAD_BIT, &ct->status);
+  out:
+--- 
+-2.55.0
+-
+diff --git a/target/linux/generic/pending-6.18/675-12-selftests-netfilter-Add-bridge_fastpath.sh.patch b/target/linux/generic/pending-6.18/675-12-selftests-netfilter-Add-bridge_fastpath.sh.patch
+index 468f7b1f..3bcf0e47 100644
+--- a/target/linux/generic/pending-6.18/675-12-selftests-netfilter-Add-bridge_fastpath.sh.patch
++++ b/target/linux/generic/pending-6.18/675-12-selftests-netfilter-Add-bridge_fastpath.sh.patch
+@@ -27,8 +27,6 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+  2 files changed, 1097 insertions(+)
+  create mode 100755 tools/testing/selftests/net/netfilter/bridge_fastpath.sh
+ 
+-diff --git a/tools/testing/selftests/net/netfilter/Makefile b/tools/testing/selftests/net/netfilter/Makefile
+-index ee2d1a5254f8..a7edc6654040 100644
+ --- a/tools/testing/selftests/net/netfilter/Makefile
+ +++ b/tools/testing/selftests/net/netfilter/Makefile
+ @@ -10,6 +10,7 @@ TEST_PROGS := \
+@@ -39,9 +37,6 @@ index ee2d1a5254f8..a7edc6654040 100644
+  	conntrack_clash.sh \
+  	conntrack_dump_flush.sh \
+  	conntrack_icmp_related.sh \
+-diff --git a/tools/testing/selftests/net/netfilter/bridge_fastpath.sh b/tools/testing/selftests/net/netfilter/bridge_fastpath.sh
+-new file mode 100755
+-index 000000000000..c93f5aa4bb31
+ --- /dev/null
+ +++ b/tools/testing/selftests/net/netfilter/bridge_fastpath.sh
+ @@ -0,0 +1,1096 @@
+@@ -1141,6 +1136,3 @@ index 000000000000..c93f5aa4bb31
+ +fi
+ +
+ +exit $ret
+--- 
+-2.55.0
+-
+diff --git a/target/linux/generic/pending-6.18/675-13-netfilter-nft_flow_offload-Set-hw_ifidx-in-nft_dev_f.patch b/target/linux/generic/pending-6.18/675-13-netfilter-nft_flow_offload-Set-hw_ifidx-in-nft_dev_f.patch
+index dabcb5fb..e1325c5f 100644
+--- a/target/linux/generic/pending-6.18/675-13-netfilter-nft_flow_offload-Set-hw_ifidx-in-nft_dev_f.patch
++++ b/target/linux/generic/pending-6.18/675-13-netfilter-nft_flow_offload-Set-hw_ifidx-in-nft_dev_f.patch
+@@ -18,11 +18,9 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+  net/netfilter/nf_flow_table_path.c | 1 +
+  1 file changed, 1 insertion(+)
+ 
+-diff --git a/net/netfilter/nf_flow_table_path.c b/net/netfilter/nf_flow_table_path.c
+-index 72f50547c924..5e43724257d8 100644
+ --- a/net/netfilter/nf_flow_table_path.c
+ +++ b/net/netfilter/nf_flow_table_path.c
+-@@ -352,6 +352,7 @@ static int nft_dev_fill_bridge_path(struct flow_offload *flow,
++@@ -353,6 +353,7 @@ static int nft_dev_fill_bridge_path(stru
+  	ether_addr_copy(th[dir].tuple.out.h_source, src_ha);
+  	ether_addr_copy(th[dir].tuple.out.h_dest, dst_ha);
+  	th[dir].tuple.out.ifidx = info.outdev->ifindex;
+@@ -30,6 +28,3 @@ index 72f50547c924..5e43724257d8 100644
+  	th[dir].tuple.xmit_type = FLOW_OFFLOAD_XMIT_DIRECT;
+  
+  	return 0;
+--- 
+-2.55.0
+-
+diff --git a/target/linux/generic/pending-6.18/675-14-net-core-dev-Remove-WARN_ON-from-dev_fill_bridge_pat.patch b/target/linux/generic/pending-6.18/675-14-net-core-dev-Remove-WARN_ON-from-dev_fill_bridge_pat.patch
+index e08e9d01..b38af15f 100644
+--- a/target/linux/generic/pending-6.18/675-14-net-core-dev-Remove-WARN_ON-from-dev_fill_bridge_pat.patch
++++ b/target/linux/generic/pending-6.18/675-14-net-core-dev-Remove-WARN_ON-from-dev_fill_bridge_pat.patch
+@@ -17,11 +17,9 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+  net/core/dev.c | 2 +-
+  1 file changed, 1 insertion(+), 1 deletion(-)
+ 
+-diff --git a/net/core/dev.c b/net/core/dev.c
+-index 02897f10fbd9..ae24efe97f49 100644
+ --- a/net/core/dev.c
+ +++ b/net/core/dev.c
+-@@ -802,7 +802,7 @@ int dev_fill_bridge_path(struct net_device_path_ctx *ctx,
++@@ -802,7 +802,7 @@ int dev_fill_bridge_path(struct net_devi
+  	if (br_dev->netdev_ops->ndo_fill_forward_path(ctx, path) < 0)
+  		return -1;
+  
+@@ -30,6 +28,3 @@ index 02897f10fbd9..ae24efe97f49 100644
+  		return -1;
+  
+  	return dev_fill_forward_path_common(ctx, stack);
+--- 
+-2.55.0
+-
+diff --git a/target/linux/generic/pending-6.18/700-netfilter-nft_flow_offload-handle-netdevice-events-f.patch b/target/linux/generic/pending-6.18/700-netfilter-nft_flow_offload-handle-netdevice-events-f.patch
+index 1dff8e43..28d28e11 100644
+--- a/target/linux/generic/pending-6.18/700-netfilter-nft_flow_offload-handle-netdevice-events-f.patch
++++ b/target/linux/generic/pending-6.18/700-netfilter-nft_flow_offload-handle-netdevice-events-f.patch
+@@ -1,3 +1,4 @@
++From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+ From: Pablo Neira Ayuso <pablo@netfilter.org>
+ Date: Thu, 25 Jan 2018 12:58:55 +0100
+ Subject: [PATCH] netfilter: nft_flow_offload: handle netdevice events from
+@@ -55,7 +56,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
+  	unregister_pernet_subsys(&nf_flow_table_net_ops);
+ --- a/net/netfilter/nft_flow_offload.c
+ +++ b/net/netfilter/nft_flow_offload.c
+-@@ -234,47 +234,14 @@ static struct nft_expr_type nft_flow_off
++@@ -248,47 +248,14 @@ static struct nft_expr_type nft_flow_off
+  	.owner		= THIS_MODULE,
+  };
+  
