@@ -9,13 +9,20 @@ since, including the mtk_wed fixes (ring free on detach, `dma_unmap_single` size
 PPE flow-priority change, the flowtable roaming/VLAN-ID fixes, and newer mt76/mac80211.
 
 ## How it was rebased
-The 12 PR commits are in `bridge-offload-on-main-7eb9f10.mbox` and apply with plain `git am` on main `7eb9f10`.
-Differences from the PR as posted:
-- Patch 6 (`DEV_PATH_BR_VLAN_KEEP_HW` in `xt_FLOWOFFLOAD`): main changed `hack-6.18/650-...` since the PR was written, so the
+The 12 PR commits plus one port commit (13 patches) are in `bridge-offload-on-main-7eb9f10.mbox` and apply with plain
+`git am` on main `7eb9f10`. Differences from the PR as posted:
+- **Port commit (13/13), the one real code change:** main backports upstream v7.3 flowtable work (`706-01`:
+  `dev_fill_forward_path(ctx, stack)`, `706-02`: the `ieee80211` path flag) that the PR predates, so the PR's `675-06`
+  (`dev_fill_bridge_path`) did not apply to linux 6.18.55. `675-06` was reworked on the new signature (shared walk in
+  `dev_fill_forward_path_common()`), and `675-11` sets `.ieee80211 = true` in the bridge path context, as main's own
+  `nft_dev_fill_forward_path()` does, so a Wi-Fi bridge port ends the software path at `DEV_PATH_IEEE80211`. All 665 kernel
+  patches were replayed in order against linux-6.18.55 and apply. **This port is not from the PR author, was not compiled
+  locally and has not been run on hardware.**
+- Patch 6/12 (`DEV_PATH_BR_VLAN_KEEP_HW` in `xt_FLOWOFFLOAD`): main changed `hack-6.18/650-...` since the PR was written, so the
   two-line `case DEV_PATH_BR_VLAN_KEEP_HW:` addition was re-applied on main's version of the file (hunk count 734 -> 736).
-- Patch 7 (firewall4): main moved firewall4 to `e6f600c` (2026-10-29). The PR's patch still applies (offsets only);
+- Patch 7/12 (firewall4): main moved firewall4 to `e6f600c` (2026-10-29). The PR's patch still applies (offsets only);
   `PKG_RELEASE` is 2 instead of 3 because main's package release was reset by the version bump.
-- Patch 12 (refresh): only the PR's own `675-xx` refreshes were kept. Refreshes of files main maintains itself
+- Patch 12/12 (refresh): only the PR's own `675-xx` refreshes were kept. Refreshes of files main maintains itself
   (`650`, `721`, `731`, `915-01`) were dropped, and `699` stays deleted because main folded it into an upstream backport.
 
 ## Build on GitHub (free machines)

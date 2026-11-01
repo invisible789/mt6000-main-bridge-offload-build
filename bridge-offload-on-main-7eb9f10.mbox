@@ -1,7 +1,7 @@
 From 9760d8cb0e13abe1715fa162b1ba06a06cb26f83 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 06:02:15 +0300
-Subject: [PATCH 01/12] kernel: add kmod-nf-conntrack-bridge package
+Subject: [PATCH 01/13] kernel: add kmod-nf-conntrack-bridge package
 
 Add package definition for bridge connection tracking module
 (CONFIG_NF_CONNTRACK_BRIDGE), which provides native bridge
@@ -46,7 +46,7 @@ index debc2a5a..9c9c4161 100644
 From 8aa94aa8efe1e29c617cfee5983de3b53ff8a068 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 05:22:59 +0300
-Subject: [PATCH 02/12] generic: pending-6.18: add nft_flow_offload bridge
+Subject: [PATCH 02/13] generic: pending-6.18: add nft_flow_offload bridge
  offload
 
 Backport Eric Woudstra bridge fastpath series adding nftables bridge
@@ -2703,7 +2703,7 @@ index 00000000..468f7b1f
 From 7158f8d509403038aaa8fe9c707f82a12e9beebc Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 07:56:39 +0300
-Subject: [PATCH 03/12] generic: pending-6.18: set hw_ifidx in bridge flow
+Subject: [PATCH 03/13] generic: pending-6.18: set hw_ifidx in bridge flow
  offload path
 
 The bridge fastpath (nft_dev_fill_bridge_path) was not setting
@@ -2767,7 +2767,7 @@ index 00000000..dabcb5fb
 From 1369d779aca27b5461da0e5a0fb0ed099f204fd7 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 10:17:58 +0300
-Subject: [PATCH 04/12] generic: pending-6.18: remove WARN_ON from
+Subject: [PATCH 04/13] generic: pending-6.18: remove WARN_ON from
  dev_fill_bridge_path()
 
 When the bridge floods a packet (unknown unicast, broadcast, multicast),
@@ -2829,7 +2829,7 @@ index 00000000..e08e9d01
 From a0a38c56d71543f82dd9c9e039267cae9443e190 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 06:22:52 +0300
-Subject: [PATCH 05/12] airoha: fix 915-01 DSCP offload patch for bridge
+Subject: [PATCH 05/13] airoha: fix 915-01 DSCP offload patch for bridge
  fastpath changes
 
 Update Lorenzo Bianconi DSCP offload (915-01) to apply correctly
@@ -2866,7 +2866,7 @@ index 414f6935..a25a639a 100644
 From ec12b10d680cf9a9c6637aeb021eddbf52817e8b Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Sat, 4 Jul 2026 01:56:30 +0300
-Subject: [PATCH 06/12] netfilter: hack-6.18: handle DEV_PATH_BR_VLAN_KEEP_HW
+Subject: [PATCH 06/13] netfilter: hack-6.18: handle DEV_PATH_BR_VLAN_KEEP_HW
  in xt_FLOWOFFLOAD
 
 The DEV_PATH_BR_VLAN_KEEP_HW bridge vlan mode was introduced by
@@ -2913,7 +2913,7 @@ index ea23c135..4ec4bf0c 100644
 From 9283b2f44b09d9771d37bc5fa297884c46474eb4 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 08:24:50 +0300
-Subject: [PATCH 07/12] firewall4: add bridge flowtable support
+Subject: [PATCH 07/13] firewall4: add bridge flowtable support
 
 Generate a bridge-family flowtable (table bridge fw4, flowtable fb)
 when the offload device list contains bridge ports. The bridge
@@ -3027,7 +3027,7 @@ index 00000000..cf324e84
 From 54cb169a2ffa86facc525143861011d26390c9cd Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 09:21:24 +0300
-Subject: [PATCH 08/12] airoha: an7581: add kmod-nf-conntrack-bridge to default
+Subject: [PATCH 08/13] airoha: an7581: add kmod-nf-conntrack-bridge to default
  packages
 
 Enable bridge connection tracking by default on the AN7581 target.
@@ -3055,7 +3055,7 @@ index 70f79b4c..6ac77875 100644
 From 2b16ff4dd55499371033f5a3ee3c01c84cd1c874 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Sat, 4 Jul 2026 01:08:33 +0300
-Subject: [PATCH 09/12] mediatek: filogic: add kmod-nf-conntrack-bridge to
+Subject: [PATCH 09/13] mediatek: filogic: add kmod-nf-conntrack-bridge to
  default packages
 
 Enable bridge connection tracking by default on the filogic target.
@@ -3085,7 +3085,7 @@ index 1df1acc6..1354c47e 100644
 From a562ae4c3838eaeb86d12553185d89632ea91f96 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Fri, 3 Jul 2026 23:21:42 +0300
-Subject: [PATCH 10/12] airoha: an7581: add hotplug script to reload firewall
+Subject: [PATCH 10/13] airoha: an7581: add hotplug script to reload firewall
  on bridge port add
 
 At boot the firewall starts before hostapd creates wireless interfaces
@@ -3135,7 +3135,7 @@ index 00000000..2a5b2dd3
 From 43697739768720d7124927d60039fedb29674984 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Fri, 3 Jul 2026 23:23:50 +0300
-Subject: [PATCH 11/12] mediatek: filogic: add hotplug script to reload
+Subject: [PATCH 11/13] mediatek: filogic: add hotplug script to reload
  firewall on bridge port add
 
 At boot the firewall starts before hostapd creates wireless interfaces
@@ -3185,7 +3185,7 @@ index 00000000..2a5b2dd3
 From a1aa29810e704799e1e7a434d540fbeb73e80f34 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Fri, 18 Sep 2026 19:03:33 +0300
-Subject: [PATCH 12/12] generic: refresh kernel 6.18 patches
+Subject: [PATCH 12/13] generic: refresh kernel 6.18 patches
 
 Refreshed patches by running `make target/linux/refresh` for airoha
 against 6.18.52 after the bridge fastpath rebase. Besides hunk
@@ -3966,3 +3966,232 @@ index 1dff8e43..28d28e11 100644
   	.owner		= THIS_MODULE,
   };
   
+
+From 1aabdba3a31003e7f859505e1464b3846cc74cc1 Mon Sep 17 00:00:00 2001
+From: t <a@b.c>
+Date: Sun, 1 Nov 2026 05:48:28 +0500
+Subject: [PATCH 13/13] generic: pending-6.18: port bridge offload series to
+ ctx-based dev_fill_forward_path()
+
+OpenWrt main now backports "net: pass net_device_path_ctx to
+dev_fill_forward_path()" (706-01) and the ieee80211 path flag (706-02),
+which the PR #24038 series predates, so 675-06 no longer applied to the
+kernel.
+
+675-06: keep dev_fill_forward_path(ctx, stack) as the entry point, move its
+walk into dev_fill_forward_path_common() and add dev_fill_bridge_path() on
+top of it, as the original patch does.
+
+675-11: set .ieee80211 in the bridge path context, like main's
+nft_dev_fill_forward_path(). A Wi-Fi bridge port then ends the software path
+at DEV_PATH_IEEE80211 (hw_outdev = that netdev) instead of depending on a
+driver net_fill_forward_path hook and a station lookup; the PPE driver
+resolves the WDMA path itself with its own context. This also regenerates the
+patch so it applies without fuzz.
+
+Applied and checked in order against linux-6.18.55 with main's full kernel
+patch stack (665 patches). Not compiled or run on hardware.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01LLsZaS8jKfUFNL6oT3QqL1
+---
+ ...et-core-dev-Add-dev_fill_bridge_path.patch | 61 +++++--------------
+ ...ow_offload-Add-bridgeflow-to-nft_flo.patch | 27 +++++---
+ 2 files changed, 32 insertions(+), 56 deletions(-)
+
+diff --git a/target/linux/generic/pending-6.18/675-06-net-core-dev-Add-dev_fill_bridge_path.patch b/target/linux/generic/pending-6.18/675-06-net-core-dev-Add-dev_fill_bridge_path.patch
+index 0be3b3ea..1320f29d 100644
+--- a/target/linux/generic/pending-6.18/675-06-net-core-dev-Add-dev_fill_bridge_path.patch
++++ b/target/linux/generic/pending-6.18/675-06-net-core-dev-Add-dev_fill_bridge_path.patch
+@@ -10,73 +10,48 @@ the (vlan) encaps.
+ 
+ Based on commit 6d79e1e67958 from ericwoud/bpir-nftflow-nf-next-20260707.
+ 
++Ported to the ctx-based dev_fill_forward_path() API now in OpenWrt main:
++dev_fill_forward_path() keeps taking a struct net_device_path_ctx and shares
++its loop with dev_fill_bridge_path() through dev_fill_forward_path_common().
++
+ Signed-off-by: Eric Woudstra <ericwouds@gmail.com>
+ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+ ---
+  include/linux/netdevice.h |  2 ++
+- net/core/dev.c            | 66 +++++++++++++++++++++++++++++++--------
+- 2 files changed, 55 insertions(+), 13 deletions(-)
++ net/core/dev.c            | 44 +++++++++++++++++++++++++++++++++++++++++---
++ 2 files changed, 43 insertions(+), 3 deletions(-)
+ 
+ --- a/include/linux/netdevice.h
+ +++ b/include/linux/netdevice.h
+-@@ -3361,6 +3361,8 @@ void dev_remove_offload(struct packet_of
++@@ -3364,6 +3364,8 @@ void dev_remove_offload(struct packet_offload *po);
+  
+  int dev_get_iflink(const struct net_device *dev);
+  int dev_fill_metadata_dst(struct net_device *dev, struct sk_buff *skb);
+ +int dev_fill_bridge_path(struct net_device_path_ctx *ctx,
+ +			 struct net_device_path_stack *stack);
+- int dev_fill_forward_path(const struct net_device *dev, const u8 *daddr,
++ int dev_fill_forward_path(struct net_device_path_ctx *ctx,
+  			  struct net_device_path_stack *stack);
+  struct net_device *dev_get_by_name(struct net *net, const char *name);
+ --- a/net/core/dev.c
+ +++ b/net/core/dev.c
+-@@ -744,44 +744,84 @@ static struct net_device_path *dev_fwd_p
++@@ -744,14 +744,13 @@ static struct net_device_path *dev_fwd_path(struct net_device_path_stack *stack)
+  	return &stack->path[k];
+  }
+  
+--int dev_fill_forward_path(const struct net_device *dev, const u8 *daddr,
++-int dev_fill_forward_path(struct net_device_path_ctx *ctx,
+ -			  struct net_device_path_stack *stack)
+ +static int dev_fill_forward_path_common(struct net_device_path_ctx *ctx,
+ +					struct net_device_path_stack *stack)
+  {
+  	const struct net_device *last_dev;
+--	struct net_device_path_ctx ctx = {
+--		.dev	= dev,
+--	};
+  	struct net_device_path *path;
+  	int ret = 0;
+  
+--	memcpy(ctx.daddr, daddr, sizeof(ctx.daddr));
+ -	stack->num_paths = 0;
+--	while (ctx.dev && ctx.dev->netdev_ops->ndo_fill_forward_path) {
+--		last_dev = ctx.dev;
+-+	while (ctx->dev && ctx->dev->netdev_ops->ndo_fill_forward_path) {
+-+		last_dev = ctx->dev;
++ 	while (ctx->dev && ctx->dev->netdev_ops->ndo_fill_forward_path) {
++ 		last_dev = ctx->dev;
+  		path = dev_fwd_path(stack);
+- 		if (!path)
+- 			return -1;
+- 
+- 		memset(path, 0, sizeof(struct net_device_path));
+--		ret = ctx.dev->netdev_ops->ndo_fill_forward_path(&ctx, path);
+-+		ret = ctx->dev->netdev_ops->ndo_fill_forward_path(ctx, path);
+- 		if (ret < 0)
+- 			return -1;
+- 
+--		if (WARN_ON_ONCE(last_dev == ctx.dev))
+-+		if (WARN_ON_ONCE(last_dev == ctx->dev))
+- 			return -1;
+- 	}
+- 
+--	if (!ctx.dev)
+-+	if (!ctx->dev)
+- 		return ret;
+- 
+- 	path = dev_fwd_path(stack);
+- 	if (!path)
+- 		return -1;
+- 	path->type = DEV_PATH_ETHERNET;
+--	path->dev = ctx.dev;
+-+	path->dev = ctx->dev;
++@@ -778,6 +777,45 @@ int dev_fill_forward_path(struct net_device_path_ctx *ctx,
+  
+  	return ret;
+  }
+@@ -112,18 +87,12 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+ +}
+ +EXPORT_SYMBOL_GPL(dev_fill_bridge_path);
+ +
+-+int dev_fill_forward_path(const struct net_device *dev, const u8 *daddr,
+++int dev_fill_forward_path(struct net_device_path_ctx *ctx,
+ +			  struct net_device_path_stack *stack)
+ +{
+-+	struct net_device_path_ctx ctx = {
+-+		.dev	= dev,
+-+	};
+-+
+-+	memcpy(ctx.daddr, daddr, sizeof(ctx.daddr));
+-+
+ +	stack->num_paths = 0;
+ +
+-+	return dev_fill_forward_path_common(&ctx, stack);
+++	return dev_fill_forward_path_common(ctx, stack);
+ +}
+  EXPORT_SYMBOL_GPL(dev_fill_forward_path);
+  
+diff --git a/target/linux/generic/pending-6.18/675-11-netfilter-nft_flow_offload-Add-bridgeflow-to-nft_flo.patch b/target/linux/generic/pending-6.18/675-11-netfilter-nft_flow_offload-Add-bridgeflow-to-nft_flo.patch
+index 702bad69..b90b1103 100644
+--- a/target/linux/generic/pending-6.18/675-11-netfilter-nft_flow_offload-Add-bridgeflow-to-nft_flo.patch
++++ b/target/linux/generic/pending-6.18/675-11-netfilter-nft_flow_offload-Add-bridgeflow-to-nft_flo.patch
+@@ -14,13 +14,18 @@ using dev_fill_bridge_path() to set up direct xmit offload.
+ 
+ Based on commit 20242242e192 from ericwoud/bpir-nftflow-nf-next-20260707.
+ 
++Ported to the ctx-based dev_fill_forward_path() API now in OpenWrt main:
++the bridge path context sets ieee80211, like nft_dev_fill_forward_path(),
++so a Wi-Fi bridge port ends the software path at DEV_PATH_IEEE80211 and the
++PPE driver resolves the WDMA path itself.
++
+ Co-authored-by: Eric Woudstra <ericwouds@gmail.com>
+ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+ ---
+  include/net/netfilter/nf_flow_table.h |   7 ++
+- net/netfilter/nf_flow_table_path.c    | 128 ++++++++++++++++++++++++++
+- net/netfilter/nft_flow_offload.c      |  20 +++-
+- 3 files changed, 150 insertions(+), 5 deletions(-)
++ net/netfilter/nf_flow_table_path.c    | 130 ++++++++++++++++++++++++++++++++++
++ net/netfilter/nft_flow_offload.c      |  20 ++++--
++ 3 files changed, 152 insertions(+), 5 deletions(-)
+ 
+ --- a/include/net/netfilter/nf_flow_table.h
+ +++ b/include/net/netfilter/nf_flow_table.h
+@@ -33,7 +38,7 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+  struct nf_flow_rule;
+  struct flow_offload;
+  enum flow_offload_tuple_dir;
+-@@ -286,6 +288,11 @@ nf_flow_table_offload_del_cb(struct nf_f
++@@ -286,6 +288,11 @@ nf_flow_table_offload_del_cb(struct nf_flowtable *flow_table,
+  void flow_offload_route_init(struct flow_offload *flow,
+  			     struct nf_flow_route *route);
+  
+@@ -57,8 +62,8 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+  #include <linux/netfilter/nf_conntrack_common.h>
+  #include <linux/netfilter/nf_tables.h>
+  #include <net/ip.h>
+-@@ -290,3 +293,128 @@ int nft_flow_route(const struct nft_pkti
+- 	return 0;
++@@ -310,3 +313,130 @@ int nft_flow_route(const struct nft_pktinfo *pkt, const struct nf_conn *ct,
++ 	return -ENOENT;
+  }
+  EXPORT_SYMBOL_GPL(nft_flow_route);
+ +
+@@ -71,7 +76,9 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+ +				    unsigned char *dst_ha)
+ +{
+ +	struct flow_offload_tuple_rhash *th = flow->tuplehash;
+-+	struct net_device_path_ctx ctx = {};
+++	struct net_device_path_ctx ctx = {
+++		.ieee80211 = true,
+++	};
+ +	struct net_device_path_stack stack;
+ +	struct nft_forward_info info = {};
+ +	int i, j = 0;
+@@ -196,7 +203,7 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+  #include <linux/netfilter/nf_conntrack_common.h>
+  #include <linux/netfilter/nf_tables.h>
+  #include <net/ip.h>
+-@@ -52,6 +53,7 @@ static void nft_flow_offload_eval(const
++@@ -52,6 +53,7 @@ static void nft_flow_offload_eval(const struct nft_expr *expr,
+  {
+  	struct nft_flow_offload *priv = nft_expr_priv(expr);
+  	struct nf_flowtable *flowtable = &priv->flowtable->data;
+@@ -204,7 +211,7 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+  	struct tcphdr _tcph, *tcph = NULL;
+  	struct nf_flow_route route = {};
+  	enum ip_conntrack_info ctinfo;
+-@@ -108,14 +110,20 @@ static void nft_flow_offload_eval(const
++@@ -108,14 +110,20 @@ static void nft_flow_offload_eval(const struct nft_expr *expr,
+  		goto out;
+  
+  	dir = CTINFO2DIR(ctinfo);
+@@ -228,7 +235,7 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+  	if (tcph)
+  		flow_offload_ct_tcp(ct);
+  
+-@@ -129,8 +137,10 @@ static void nft_flow_offload_eval(const
++@@ -129,8 +137,10 @@ static void nft_flow_offload_eval(const struct nft_expr *expr,
+  err_flow_add:
+  	flow_offload_free(flow);
+  err_flow_alloc:
