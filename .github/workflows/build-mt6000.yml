@@ -100,7 +100,9 @@ jobs:
       - name: Build
         if: ${{ !inputs.dry_run }}
         working-directory: openwrt
-        run: make -j"$(nproc)" || make -j1 V=s
+        run: |
+          set -o pipefail
+          make -j"$(nproc)" 2>&1 | tee ../build.log || make -j1 V=s 2>&1 | tee -a ../build.log
 
       - name: Post-build checks
         if: ${{ !inputs.dry_run }}
@@ -146,11 +148,16 @@ jobs:
           for f in pre-check.log tools-install.log fw4-prepare.log kernel-prepare.log post-check.log; do
             if [ -f "$f" ]; then tail -n 2000 "$f" > "/tmp/ci-logs/$f"; fi
           done
+          if [ -f build.log ]; then
+            tail -n 1500 build.log > /tmp/ci-logs/build-tail.log
+            grep -nE 'error:|Error [0-9]+|\*\*\*|undefined reference|No rule to make target' build.log | tail -n 120 > /tmp/ci-logs/build-errors.log || true
+            echo "build.log lines: $(wc -l < build.log)" >> /tmp/ci-logs/RUN.txt
+          fi
           if [ -d openwrt/logs ]; then
             (cd openwrt && find logs -type f -name '*.txt' | head -n 60 | while read -r f; do
               mkdir -p "/tmp/ci-logs/$(dirname "$f")"; tail -n 300 "$f" > "/tmp/ci-logs/$f"; done)
           fi
-          echo "run ${{ github.run_id }} mode=${{ inputs.mode }} dry_run=${{ inputs.dry_run }}" > /tmp/ci-logs/RUN.txt
+          echo "run ${{ github.run_id }} mode=${{ inputs.mode }} dry_run=${{ inputs.dry_run }}" >> /tmp/ci-logs/RUN.txt
           cd /tmp/ci-logs
           git init -q -b ci-logs
           git config user.email ci@example.com
