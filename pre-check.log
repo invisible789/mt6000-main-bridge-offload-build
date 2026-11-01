@@ -1,0 +1,34 @@
+[pre] patch set is present in the source tree
+  ok    kernel 6.18 is the mediatek default
+  ok    kmod-nf-conntrack-bridge is defined
+  ok    filogic installs kmod-nf-conntrack-bridge by default
+  ok    firewall4 bridge flowtable patch
+  ok    filogic hotplug script (fw4 reload on bridge port add)
+  ok    kernel patch: nft_flow_offload bridgeflow
+  ok    kernel patch: dev_fill_bridge_path
+  ok    kernel patch: bridge conntrack double-vlan/pppoe
+  ok    xt_FLOWOFFLOAD handles DEV_PATH_BR_VLAN_KEEP_HW
+[pre] current-main fixes are in the tree
+  ok    mtk_wed: free rings during detach
+  ok    mtk_wed: dma_unmap_single size fix
+  ok    mtk_wed: WED v2 WDMA RESV_BUFF increase
+  ok    mtk_eth_soc: PPE queries wireless driver for flow TID
+  ok    device profile glinet_gl-mt6000 exists
+  ok    mt7986 WED offload firmware is a device package
+[pre] feeds installed
+  ok    feed package luci
+  ok    feed package chrony
+  ok    feed package iperf3
+[pre] .config selects what we expect
+  ok    device glinet_gl-mt6000 selected
+  ok    package luci selected
+  ok    package chrony selected
+  ok    package iperf3 selected
+  ok    package ethtool selected
+  ok    package kmod-nf-conntrack-bridge selected
+  ok    package kmod-nft-offload selected
+  ok    package nftables-json selected
+  ok    package firewall4 selected
+  ok    bridger is NOT selected
+
+ALL CHECKS PASSED (pre)

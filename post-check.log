@@ -1,0 +1,23 @@
+[post] build output
+  ok    sysupgrade image: bin/targets/mediatek/filogic/openwrt-mediatek-filogic-glinet_gl-mt6000-squashfs-sysupgrade.bin
+  ok    image is larger than 8 MB
+  info  4d00fb657cda5fc7924c761e0d7b4e464a64be7740f0d58757a8968ff2ee3b64  openwrt-mediatek-filogic-glinet_gl-mt6000-squashfs-sysupgrade.bin
+[post] package manifest (bin/targets/mediatek/filogic/openwrt-mediatek-filogic-glinet_gl-mt6000.manifest)
+  ok    manifest has firewall4
+  ok    manifest has kmod-nf-conntrack-bridge
+  ok    manifest has kmod-nft-offload
+  ok    manifest has nftables-json
+  ok    manifest has kmod-mt7915e
+  ok    manifest has kmod-mt7986-firmware
+  ok    manifest has mt7986-wo-firmware
+  ok    manifest has chrony
+  ok    manifest has luci
+  ok    manifest has no bridger
+  ok    kernel in manifest is 6.18
+[post] rootfs contents (build_dir/target-aarch64_cortex-a53_musl/root-mediatek)
+  ok    hotplug script installed
+  ok    fw4 has bridge flowtable support
+  ok    nf_conntrack_bridge.ko present
+  ok    kernel modules are 6.18.x
+
+ALL CHECKS PASSED (post)
