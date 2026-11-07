@@ -42,6 +42,9 @@ index 5d3d2858..296fbb5f 100644
  define KernelPackage/nf-conntrack-netlink
    TITLE:=Connection tracking netlink interface
    FILES:=$(LINUX_DIR)/net/netfilter/nf_conntrack_netlink.ko
+-- 
+2.43.0
+
 
 From ed0c50a70ef6a353554ad8f227953d3bcaf86b82 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
@@ -2699,6 +2702,9 @@ index 00000000..468f7b1f
 +-- 
 +2.55.0
 +
+-- 
+2.43.0
+
 
 From 1db3e748bf594b91de9b6ee7fa0f833b12cb98bb Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
@@ -2763,6 +2769,9 @@ index 00000000..dabcb5fb
 +-- 
 +2.55.0
 +
+-- 
+2.43.0
+
 
 From 43e2dc4615805747b8f1bb225f4d371735d7f44c Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
@@ -2825,6 +2834,9 @@ index 00000000..e08e9d01
 +-- 
 +2.55.0
 +
+-- 
+2.43.0
+
 
 From 4fb405fd2ca80e526a4dbf80e4b9de8332621aa5 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
@@ -2862,6 +2874,9 @@ index 414f6935..a25a639a 100644
 +	if (routing)
 +		flow_offload_route_init(flow, &route);
 +	else
+-- 
+2.43.0
+
 
 From f508f1853c83ccab86c7bbbe23c3fe50ece4a4c1 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
@@ -2909,6 +2924,9 @@ index eeb6db04..af1c3e8d 100644
  +			}
  +			break;
  +		default:
+-- 
+2.43.0
+
 
 From 7321fc2278a234a2a16ef52fa5dd28f015be256d Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
@@ -3023,6 +3041,9 @@ index 00000000..cf324e84
 ++}
 ++{% endif %}
 + {% fw4.includes('ruleset-append') %}
+-- 
+2.43.0
+
 
 From c45360603beeb9dd17f568fc02e494bffe2c2da3 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
@@ -3051,6 +3072,9 @@ index 70f79b4c..6ac77875 100644
  
  define Target/Description
  	Build firmware images for Airoha an7581 ARM based boards.
+-- 
+2.43.0
+
 
 From 91a5befd416cd3cf0c38760fa1cdfe207bf7dfa7 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
@@ -3081,6 +3105,9 @@ index 1df1acc6..1354c47e 100644
  KERNELNAME:=Image dtbs
  DEFAULT_PROFILE:=openwrt_one
  
+-- 
+2.43.0
+
 
 From ba924db198bbf10be4b514560f60d2fdbd43b93a Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
@@ -3131,6 +3158,9 @@ index 00000000..2a5b2dd3
 +) &
 +
 +exit 0
+-- 
+2.43.0
+
 
 From 17b229ef2bc4612bc78c415a879437413f874757 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
@@ -3181,6 +3211,9 @@ index 00000000..2a5b2dd3
 +) &
 +
 +exit 0
+-- 
+2.43.0
+
 
 From b3aaa82430128ec27e3d10ab4e0be83dd5ba6225 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
@@ -3947,6 +3980,9 @@ index e08e9d01..b38af15f 100644
 --- 
 -2.55.0
 -
+-- 
+2.43.0
+
 
 From cefc1bbc7bd6cf483ba2f60e1f076014bbf87ee3 Mon Sep 17 00:00:00 2001
 From: t <a@b.c>
@@ -4176,6 +4212,9 @@ index 702bad69..b90b1103 100644
   err_flow_add:
   	flow_offload_free(flow);
   err_flow_alloc:
+-- 
+2.43.0
+
 
 From fef1f5dc6636e438cb7ca8acfa137220cb4de2f0 Mon Sep 17 00:00:00 2001
 From: t <a@b.c>
@@ -4212,8 +4251,11 @@ index 4a59f4fd..2464a355 100644
  -		if (pskb_trim_rcsum(skb, len))
  -			return NF_ACCEPT;
  +		if (pppoe_len && pppoe_len != len)
+-- 
+2.43.0
 
-From 63985e1b41d877c64c6e8c8f61a729c4dad3b5e5 Mon Sep 17 00:00:00 2001
+
+From c1a46ad4d8bb79a58e5c837ef44b528e2b7613ca Mon Sep 17 00:00:00 2001
 From: t <a@b.c>
 Date: Sat, 7 Nov 2026 20:28:58 +0500
 Subject: [PATCH 15/15] mediatek: filogic: make the fw4 bridge-reload hotplug
@@ -4224,8 +4266,11 @@ weaknesses:
 
 - It only matched phyN-apM and ap-mldN, so an SSID with a custom
   "option ifname" was never added to the bridge flowtable. Match any
-  cfg80211 netdev through its sysfs "wireless" group (created before the
-  add uevent is sent) and keep the stock names as a fallback.
+  cfg80211 netdev through DEVTYPE=wlan in the netdev's sysfs uevent file
+  (set before the add uevent is sent; checked on the GL-MT6000, where the
+  netdev has no sysfs "wireless" directory) and keep the stock names as a
+  fallback. Only bridge ports (sysfs "brport") are reloaded for, so a
+  client-mode or monitor interface does not trigger a pointless reload.
 - "flock -n" silently dropped the event of a second interface while a
   reload was running. That reload may have listed the bridge ports before
   the second device joined its bridge, leaving the device out of the
@@ -4236,22 +4281,22 @@ weaknesses:
 - The in-flowtable check is shared by both places that need it.
 
 Tested the control flow under dash with mocked nft, sysfs and firewall
-reload (7 scenarios: ignored action, non-wireless netdev, custom ifname,
+reload (8 scenarios: ignored action, non-wireless netdev, custom ifname,
 stock name, two-port boot burst, port bridged late during a reload,
-already present); the previous script fails two of them (custom ifname,
-late port). Not run on hardware.
+already present, wlan netdev that is not a bridge port); the previous
+script fails two of them (custom ifname, late port). Not run on hardware.
 
 Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01LLsZaS8jKfUFNL6oT3QqL1
 ---
- .../etc/hotplug.d/net/50-fw4-bridge-reload    | 35 +++++++++++++++----
- 1 file changed, 29 insertions(+), 6 deletions(-)
+ .../etc/hotplug.d/net/50-fw4-bridge-reload    | 41 ++++++++++++++++---
+ 1 file changed, 35 insertions(+), 6 deletions(-)
 
 diff --git a/target/linux/mediatek/filogic/base-files/etc/hotplug.d/net/50-fw4-bridge-reload b/target/linux/mediatek/filogic/base-files/etc/hotplug.d/net/50-fw4-bridge-reload
-index 2a5b2dd3..60155d4e 100644
+index 2a5b2dd3..1c91f953 100644
 --- a/target/linux/mediatek/filogic/base-files/etc/hotplug.d/net/50-fw4-bridge-reload
 +++ b/target/linux/mediatek/filogic/base-files/etc/hotplug.d/net/50-fw4-bridge-reload
-@@ -2,17 +2,40 @@
+@@ -2,17 +2,46 @@
  
  [ "$ACTION" = "add" ] || exit 0
  
@@ -4259,9 +4304,11 @@ index 2a5b2dd3..60155d4e 100644
 -	phy*-ap*|ap-mld*) ;;
 -	*) exit 0 ;;
 -esac
-+# Any wireless netdev: cfg80211 netdevs get the sysfs "wireless" group before
-+# the uevent is sent. Keep the stock phyN-apM / ap-mldN names as a fallback.
-+if [ ! -d "/sys/class/net/${DEVICENAME}/wireless" ]; then
++# Any wireless netdev: cfg80211 netdevs carry DEVTYPE=wlan in their sysfs uevent
++# file, which is set before the add uevent is sent. Read it from sysfs rather
++# than relying on the hotplug environment. Keep the stock phyN-apM / ap-mldN
++# names as a fallback.
++if ! grep -qx 'DEVTYPE=wlan' "/sys/class/net/${DEVICENAME}/uevent" 2>/dev/null; then
 +	case "${DEVICENAME}" in
 +		phy*-ap*|ap-mld*) ;;
 +		*) exit 0 ;;
@@ -4292,9 +4339,16 @@ index 2a5b2dd3..60155d4e 100644
 +	# Give netifd time to add the device to its bridge.
  	sleep 2
 +
++	# Only bridge ports can be in the flowtable (not a client-mode or monitor
++	# interface), so there is nothing to reload for anything else.
++	[ -d "/sys/class/net/${DEVICENAME}/brport" ] || exit 0
++
 +	# A reload that ran while we waited may already have picked it up.
 +	in_flowtable "${DEVICENAME}" && exit 0
 +
  	/etc/init.d/firewall reload >/dev/null 2>&1
  ) &
  
+-- 
+2.43.0
+

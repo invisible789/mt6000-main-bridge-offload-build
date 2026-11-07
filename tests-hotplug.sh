@@ -32,8 +32,8 @@ EOF
 fire() { # $1=dev $2=action ; mimic hotplug-call: source in a subshell
   ( PATH="$T/bin:$PATH"; ACTION="$2"; DEVICENAME="$1"; export ACTION DEVICENAME PATH; . "$T/script.sh" )
 }
-mkwifi()   { mkdir -p "$T/sys/$1/wireless"; }
-mkbridged(){ : > "$T/bridge/$1"; }
+mkwifi()   { mkdir -p "$T/sys/$1"; printf 'DEVTYPE=wlan\nINTERFACE=%s\n' "$1" > "$T/sys/$1/uevent"; }
+mkbridged(){ : > "$T/bridge/$1"; mkdir -p "$T/sys/$1/brport"; }
 count()    { wc -l < "$T/reloads" | tr -d ' '; }
 state()    { sort "$T/state" | paste -sd, -; }
 check()    { # $1=name $2=expected reloads $3=expected final state
@@ -45,7 +45,7 @@ check()    { # $1=name $2=expected reloads $3=expected final state
 
 echo "== $LABEL"
 setup s1; mkwifi phy0-ap0; mkbridged phy0-ap0; fire phy0-ap0 remove;   check "non-add action is ignored" 0 ""
-setup s2; : ; mkbridged eth9;                  fire eth9 add;          check "non-wireless netdev is ignored" 0 ""
+setup s2; mkbridged eth9; printf 'DEVTYPE=bridge\n' > "$T/sys/eth9/uevent";                  fire eth9 add;          check "non-wireless netdev is ignored" 0 ""
 setup s3; mkwifi guest; mkbridged guest;       fire guest add;         check "custom ifname with wireless dir is handled" 1 "guest"
 setup s3b; mkbridged phy0-ap0;                 fire phy0-ap0 add;      check "stock phyN-apM name w/o sysfs still handled" 1 "phy0-ap0"
 setup s4; mkwifi phy0-ap0; mkwifi phy1-ap0; mkbridged phy0-ap0; mkbridged phy1-ap0
@@ -55,6 +55,7 @@ setup s5; mkwifi phy0-ap0; mkwifi guest; mkbridged phy0-ap0
                                                                        check "port bridged late during a reload is not lost" 2 "guest,phy0-ap0"
 setup s6; mkwifi phy0-ap0; mkbridged phy0-ap0; echo phy0-ap0 > "$T/state"; fire phy0-ap0 add
                                                                        check "already in flowtable: no reload" 0 "phy0-ap0"
+setup s7; mkwifi phy0-sta0;                    fire phy0-sta0 add;     check "wlan netdev that is not a bridge port: no reload" 0 ""
 rm -rf "$BASE"
 echo "   -> $pass passed, $fail failed"
 [ "$fail" -eq 0 ]

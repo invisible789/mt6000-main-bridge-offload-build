@@ -24,10 +24,13 @@ The 12 PR commits plus three of mine (15 patches) are in `bridge-offload-on-main
   (generic backport/pending/hack + mediatek) replay in order against linux-6.18.60 with no rejects; `675-03` and `675-04`
   apply with fuzz. Not compiled or run on hardware until the CI build.
 - **Hotplug script (15/15):** `50-fw4-bridge-reload` (reloads firewall4 when a Wi-Fi netdev is added) now matches any cfg80211
-  netdev through its sysfs `wireless` group, not only `phyN-apM`/`ap-mldN`, so an SSID with a custom `ifname` joins the bridge
-  flowtable; and a second interface's event waits for a running reload (up to 60 s) instead of being dropped, then reloads
-  only if the device is still missing, so a boot burst is still one reload. The control flow was tested under `dash` with
-  mocked `nft`, sysfs and firewall reload (7 scenarios; the old script fails two of them). Not run on hardware.
+  netdev through `DEVTYPE=wlan` in its sysfs `uevent` file, not only `phyN-apM`/`ap-mldN`, so an SSID with a custom `ifname`
+  joins the bridge flowtable. (Checked on the GL-MT6000: the netdev has `DEVTYPE=wlan` there but no sysfs `wireless` directory,
+  so an earlier version of this commit that relied on that directory never matched.) It only reloads for devices that are
+  bridge ports (`brport`), and a second interface's event waits for a running reload (up to 60 s) instead of being dropped, then
+  reloads only if the device is still missing, so a boot burst is still one reload. The control flow was tested under `dash`
+  with mocked `nft`, sysfs and firewall reload (8 scenarios; the original script fails two of them). The `DEVTYPE=wlan`
+  match is confirmed on hardware; the rest of the script is not (the stock names go through the unchanged fallback).
 - Patch 6/12 (`DEV_PATH_BR_VLAN_KEEP_HW` in `xt_FLOWOFFLOAD`): main changed `hack-6.18/650-...` since the PR was written, so the
   two-line `case DEV_PATH_BR_VLAN_KEEP_HW:` addition was re-applied on main's version of the file (hunk count 734 -> 736).
 - Patch 7/12 (firewall4): main moved firewall4 to `e6f600c` (2026-10-29). The PR's patch still applies (offsets only);

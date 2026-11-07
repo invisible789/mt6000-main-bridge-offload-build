@@ -23,7 +23,8 @@ pre)
   chk "filogic installs kmod-nf-conntrack-bridge by default" grep -q 'kmod-nf-conntrack-bridge' target/linux/mediatek/filogic/target.mk
   chk "firewall4 bridge flowtable patch" test -f package/network/config/firewall4/patches/001-add-bridge-flowtable-support.patch
   chk "filogic hotplug script (fw4 reload on bridge port add)" test -f target/linux/mediatek/filogic/base-files/etc/hotplug.d/net/50-fw4-bridge-reload
-  chk "hotplug script matches any wireless netdev" grep -q '/wireless' target/linux/mediatek/filogic/base-files/etc/hotplug.d/net/50-fw4-bridge-reload
+  chk "hotplug script matches any wireless netdev (DEVTYPE=wlan)" grep -q 'DEVTYPE=wlan' target/linux/mediatek/filogic/base-files/etc/hotplug.d/net/50-fw4-bridge-reload
+  chk "hotplug script only reloads for bridge ports" grep -q '/brport' target/linux/mediatek/filogic/base-files/etc/hotplug.d/net/50-fw4-bridge-reload
   chk "hotplug script waits for the lock instead of dropping the event" grep -q 'until flock -n 9' target/linux/mediatek/filogic/base-files/etc/hotplug.d/net/50-fw4-bridge-reload
   chk "kernel patch: nft_flow_offload bridgeflow" has_glob 'target/linux/generic/pending-6.18/*Add-bridgeflow-to-nft_flo*'
   chk "kernel patch: dev_fill_bridge_path" has_glob 'target/linux/generic/pending-6.18/*net-core-dev-Add-dev_fill_bridge_path*'
