@@ -1,6 +1,6 @@
 # GL-MT6000 build: OpenWrt main + PR #24038 (L2 bridge offload)
 
-Sysupgrade image for the GL-MT6000 built from **current OpenWrt main (pinned: `7eb9f10`, kernel 6.18)** with
+Sysupgrade image for the GL-MT6000 built from **current OpenWrt main (pinned: `7e8bfcf`, kernel 6.18)** with
 **OpenWrt PR #24038** (bridge-aware flow offload for a dumb AP) applied on top. It replaces `bridger` (do not install it).
 The PR is still a **draft** and is not merged, so this is a snapshot-style build, not a stable release.
 
@@ -9,15 +9,20 @@ since, including the mtk_wed fixes (ring free on detach, `dma_unmap_single` size
 PPE flow-priority change, the flowtable roaming/VLAN-ID fixes, and newer mt76/mac80211.
 
 ## How it was rebased
-The 12 PR commits plus one port commit (13 patches) are in `bridge-offload-on-main-7eb9f10.mbox` and apply with plain
-`git am` on main `7eb9f10`. Differences from the PR as posted:
-- **Port commit (13/13), the one real code change:** main backports upstream v7.3 flowtable work (`706-01`:
+The 12 PR commits plus two port commits (14 patches) are in `bridge-offload-on-main-7e8bfcf.mbox` and apply with plain
+`git am` on main `7e8bfcf`. Differences from the PR as posted:
+- **Port commit (13/14), the main code change:** main backports upstream v7.3 flowtable work (`706-01`:
   `dev_fill_forward_path(ctx, stack)`, `706-02`: the `ieee80211` path flag) that the PR predates, so the PR's `675-06`
-  (`dev_fill_bridge_path`) did not apply to linux 6.18.55. `675-06` was reworked on the new signature (shared walk in
+  (`dev_fill_bridge_path`) did not apply to the kernel. `675-06` was reworked on the new signature (shared walk in
   `dev_fill_forward_path_common()`), and `675-11` sets `.ieee80211 = true` in the bridge path context, as main's own
-  `nft_dev_fill_forward_path()` does, so a Wi-Fi bridge port ends the software path at `DEV_PATH_IEEE80211`. All 665 kernel
-  patches were replayed in order against linux-6.18.55 and apply. **This port is not from the PR author, was not compiled
+  `nft_dev_fill_forward_path()` does, so a Wi-Fi bridge port ends the software path at `DEV_PATH_IEEE80211`. The
+  whole kernel patch stack was replayed in order against the exact kernel and applies. **This port is not from the PR author, was not compiled
   locally and has not been run on hardware.**
+- **Context fix (14/14):** the 6.18.5x stable updates (main is now on 6.18.60) changed one line in `nf_ct_bridge_pre()`
+  (`skb_ipv6_payload_len(skb)` instead of `ntohs(ipv6_hdr(skb)->payload_len)`), so the context line of the
+  `nf_ct_bridge_pre()` hunk in `675-02` was updated to match. The patch's own changes are untouched. All 730 kernel patches
+  (generic backport/pending/hack + mediatek) replay in order against linux-6.18.60 with no rejects; `675-03` and `675-04`
+  apply with fuzz. Not compiled or run on hardware until the CI build.
 - Patch 6/12 (`DEV_PATH_BR_VLAN_KEEP_HW` in `xt_FLOWOFFLOAD`): main changed `hack-6.18/650-...` since the PR was written, so the
   two-line `case DEV_PATH_BR_VLAN_KEEP_HW:` addition was re-applied on main's version of the file (hunk count 734 -> 736).
 - Patch 7/12 (firewall4): main moved firewall4 to `e6f600c` (2026-10-29). The PR's patch still applies (offsets only);

@@ -1,7 +1,7 @@
-From 9760d8cb0e13abe1715fa162b1ba06a06cb26f83 Mon Sep 17 00:00:00 2001
+From 9a4cd9813d042ecd4489015a42fd12ba215d6f7b Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 06:02:15 +0300
-Subject: [PATCH 01/13] kernel: add kmod-nf-conntrack-bridge package
+Subject: [PATCH 01/14] kernel: add kmod-nf-conntrack-bridge package
 
 Add package definition for bridge connection tracking module
 (CONFIG_NF_CONNTRACK_BRIDGE), which provides native bridge
@@ -15,7 +15,7 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
  1 file changed, 17 insertions(+)
 
 diff --git a/package/kernel/linux/modules/netfilter.mk b/package/kernel/linux/modules/netfilter.mk
-index debc2a5a..9c9c4161 100644
+index 5d3d2858..296fbb5f 100644
 --- a/package/kernel/linux/modules/netfilter.mk
 +++ b/package/kernel/linux/modules/netfilter.mk
 @@ -1229,6 +1229,23 @@ endef
@@ -43,10 +43,10 @@ index debc2a5a..9c9c4161 100644
    TITLE:=Connection tracking netlink interface
    FILES:=$(LINUX_DIR)/net/netfilter/nf_conntrack_netlink.ko
 
-From 8aa94aa8efe1e29c617cfee5983de3b53ff8a068 Mon Sep 17 00:00:00 2001
+From ed0c50a70ef6a353554ad8f227953d3bcaf86b82 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 05:22:59 +0300
-Subject: [PATCH 02/13] generic: pending-6.18: add nft_flow_offload bridge
+Subject: [PATCH 02/14] generic: pending-6.18: add nft_flow_offload bridge
  offload
 
 Backport Eric Woudstra bridge fastpath series adding nftables bridge
@@ -2700,10 +2700,10 @@ index 00000000..468f7b1f
 +2.55.0
 +
 
-From 7158f8d509403038aaa8fe9c707f82a12e9beebc Mon Sep 17 00:00:00 2001
+From 1db3e748bf594b91de9b6ee7fa0f833b12cb98bb Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 07:56:39 +0300
-Subject: [PATCH 03/13] generic: pending-6.18: set hw_ifidx in bridge flow
+Subject: [PATCH 03/14] generic: pending-6.18: set hw_ifidx in bridge flow
  offload path
 
 The bridge fastpath (nft_dev_fill_bridge_path) was not setting
@@ -2764,10 +2764,10 @@ index 00000000..dabcb5fb
 +2.55.0
 +
 
-From 1369d779aca27b5461da0e5a0fb0ed099f204fd7 Mon Sep 17 00:00:00 2001
+From 43e2dc4615805747b8f1bb225f4d371735d7f44c Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 10:17:58 +0300
-Subject: [PATCH 04/13] generic: pending-6.18: remove WARN_ON from
+Subject: [PATCH 04/14] generic: pending-6.18: remove WARN_ON from
  dev_fill_bridge_path()
 
 When the bridge floods a packet (unknown unicast, broadcast, multicast),
@@ -2826,10 +2826,10 @@ index 00000000..e08e9d01
 +2.55.0
 +
 
-From a0a38c56d71543f82dd9c9e039267cae9443e190 Mon Sep 17 00:00:00 2001
+From 4fb405fd2ca80e526a4dbf80e4b9de8332621aa5 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 06:22:52 +0300
-Subject: [PATCH 05/13] airoha: fix 915-01 DSCP offload patch for bridge
+Subject: [PATCH 05/14] airoha: fix 915-01 DSCP offload patch for bridge
  fastpath changes
 
 Update Lorenzo Bianconi DSCP offload (915-01) to apply correctly
@@ -2863,10 +2863,10 @@ index 414f6935..a25a639a 100644
 +		flow_offload_route_init(flow, &route);
 +	else
 
-From ec12b10d680cf9a9c6637aeb021eddbf52817e8b Mon Sep 17 00:00:00 2001
+From f508f1853c83ccab86c7bbbe23c3fe50ece4a4c1 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Sat, 4 Jul 2026 01:56:30 +0300
-Subject: [PATCH 06/13] netfilter: hack-6.18: handle DEV_PATH_BR_VLAN_KEEP_HW
+Subject: [PATCH 06/14] netfilter: hack-6.18: handle DEV_PATH_BR_VLAN_KEEP_HW
  in xt_FLOWOFFLOAD
 
 The DEV_PATH_BR_VLAN_KEEP_HW bridge vlan mode was introduced by
@@ -2888,7 +2888,7 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/target/linux/generic/hack-6.18/650-netfilter-add-xt_FLOWOFFLOAD-target.patch b/target/linux/generic/hack-6.18/650-netfilter-add-xt_FLOWOFFLOAD-target.patch
-index ea23c135..4ec4bf0c 100644
+index eeb6db04..af1c3e8d 100644
 --- a/target/linux/generic/hack-6.18/650-netfilter-add-xt_FLOWOFFLOAD-target.patch
 +++ b/target/linux/generic/hack-6.18/650-netfilter-add-xt_FLOWOFFLOAD-target.patch
 @@ -115,7 +115,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
@@ -2910,10 +2910,10 @@ index ea23c135..4ec4bf0c 100644
  +			break;
  +		default:
 
-From 9283b2f44b09d9771d37bc5fa297884c46474eb4 Mon Sep 17 00:00:00 2001
+From 7321fc2278a234a2a16ef52fa5dd28f015be256d Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 08:24:50 +0300
-Subject: [PATCH 07/13] firewall4: add bridge flowtable support
+Subject: [PATCH 07/14] firewall4: add bridge flowtable support
 
 Generate a bridge-family flowtable (table bridge fw4, flowtable fb)
 when the offload device list contains bridge ports. The bridge
@@ -3024,10 +3024,10 @@ index 00000000..cf324e84
 ++{% endif %}
 + {% fw4.includes('ruleset-append') %}
 
-From 54cb169a2ffa86facc525143861011d26390c9cd Mon Sep 17 00:00:00 2001
+From c45360603beeb9dd17f568fc02e494bffe2c2da3 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 09:21:24 +0300
-Subject: [PATCH 08/13] airoha: an7581: add kmod-nf-conntrack-bridge to default
+Subject: [PATCH 08/14] airoha: an7581: add kmod-nf-conntrack-bridge to default
  packages
 
 Enable bridge connection tracking by default on the AN7581 target.
@@ -3052,10 +3052,10 @@ index 70f79b4c..6ac77875 100644
  define Target/Description
  	Build firmware images for Airoha an7581 ARM based boards.
 
-From 2b16ff4dd55499371033f5a3ee3c01c84cd1c874 Mon Sep 17 00:00:00 2001
+From 91a5befd416cd3cf0c38760fa1cdfe207bf7dfa7 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Sat, 4 Jul 2026 01:08:33 +0300
-Subject: [PATCH 09/13] mediatek: filogic: add kmod-nf-conntrack-bridge to
+Subject: [PATCH 09/14] mediatek: filogic: add kmod-nf-conntrack-bridge to
  default packages
 
 Enable bridge connection tracking by default on the filogic target.
@@ -3082,10 +3082,10 @@ index 1df1acc6..1354c47e 100644
  DEFAULT_PROFILE:=openwrt_one
  
 
-From a562ae4c3838eaeb86d12553185d89632ea91f96 Mon Sep 17 00:00:00 2001
+From ba924db198bbf10be4b514560f60d2fdbd43b93a Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Fri, 3 Jul 2026 23:21:42 +0300
-Subject: [PATCH 10/13] airoha: an7581: add hotplug script to reload firewall
+Subject: [PATCH 10/14] airoha: an7581: add hotplug script to reload firewall
  on bridge port add
 
 At boot the firewall starts before hostapd creates wireless interfaces
@@ -3132,10 +3132,10 @@ index 00000000..2a5b2dd3
 +
 +exit 0
 
-From 43697739768720d7124927d60039fedb29674984 Mon Sep 17 00:00:00 2001
+From 17b229ef2bc4612bc78c415a879437413f874757 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Fri, 3 Jul 2026 23:23:50 +0300
-Subject: [PATCH 11/13] mediatek: filogic: add hotplug script to reload
+Subject: [PATCH 11/14] mediatek: filogic: add hotplug script to reload
  firewall on bridge port add
 
 At boot the firewall starts before hostapd creates wireless interfaces
@@ -3182,10 +3182,10 @@ index 00000000..2a5b2dd3
 +
 +exit 0
 
-From a1aa29810e704799e1e7a434d540fbeb73e80f34 Mon Sep 17 00:00:00 2001
+From b3aaa82430128ec27e3d10ab4e0be83dd5ba6225 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Fri, 18 Sep 2026 19:03:33 +0300
-Subject: [PATCH 12/13] generic: refresh kernel 6.18 patches
+Subject: [PATCH 12/14] generic: refresh kernel 6.18 patches
 
 Refreshed patches by running `make target/linux/refresh` for airoha
 against 6.18.52 after the bridge fastpath rebase. Besides hunk
@@ -3209,8 +3209,7 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
  ...sts-netfilter-Add-bridge_fastpath.sh.patch |  8 ----
  ...ow_offload-Set-hw_ifidx-in-nft_dev_f.patch |  7 +---
  ...ove-WARN_ON-from-dev_fill_bridge_pat.patch |  7 +---
- ...ow_offload-handle-netdevice-events-f.patch |  3 +-
- 15 files changed, 55 insertions(+), 147 deletions(-)
+ 14 files changed, 53 insertions(+), 146 deletions(-)
 
 diff --git a/target/linux/generic/pending-6.18/675-01-netfilter-utils-nf_ip-6-_checksum-_partial-correct-d.patch b/target/linux/generic/pending-6.18/675-01-netfilter-utils-nf_ip-6-_checksum-_partial-correct-d.patch
 index 0ae22099..a49840a3 100644
@@ -3948,29 +3947,11 @@ index e08e9d01..b38af15f 100644
 --- 
 -2.55.0
 -
-diff --git a/target/linux/generic/pending-6.18/700-netfilter-nft_flow_offload-handle-netdevice-events-f.patch b/target/linux/generic/pending-6.18/700-netfilter-nft_flow_offload-handle-netdevice-events-f.patch
-index 1dff8e43..28d28e11 100644
---- a/target/linux/generic/pending-6.18/700-netfilter-nft_flow_offload-handle-netdevice-events-f.patch
-+++ b/target/linux/generic/pending-6.18/700-netfilter-nft_flow_offload-handle-netdevice-events-f.patch
-@@ -1,3 +1,4 @@
-+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
- From: Pablo Neira Ayuso <pablo@netfilter.org>
- Date: Thu, 25 Jan 2018 12:58:55 +0100
- Subject: [PATCH] netfilter: nft_flow_offload: handle netdevice events from
-@@ -55,7 +56,7 @@ Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
-  	unregister_pernet_subsys(&nf_flow_table_net_ops);
- --- a/net/netfilter/nft_flow_offload.c
- +++ b/net/netfilter/nft_flow_offload.c
--@@ -234,47 +234,14 @@ static struct nft_expr_type nft_flow_off
-+@@ -248,47 +248,14 @@ static struct nft_expr_type nft_flow_off
-  	.owner		= THIS_MODULE,
-  };
-  
 
-From 1aabdba3a31003e7f859505e1464b3846cc74cc1 Mon Sep 17 00:00:00 2001
+From cefc1bbc7bd6cf483ba2f60e1f076014bbf87ee3 Mon Sep 17 00:00:00 2001
 From: t <a@b.c>
 Date: Sun, 1 Nov 2026 05:48:28 +0500
-Subject: [PATCH 13/13] generic: pending-6.18: port bridge offload series to
+Subject: [PATCH 13/14] generic: pending-6.18: port bridge offload series to
  ctx-based dev_fill_forward_path()
 
 OpenWrt main now backports "net: pass net_device_path_ctx to
@@ -4195,3 +4176,39 @@ index 702bad69..b90b1103 100644
   err_flow_add:
   	flow_offload_free(flow);
   err_flow_alloc:
+
+From fef1f5dc6636e438cb7ca8acfa137220cb4de2f0 Mon Sep 17 00:00:00 2001
+From: t <a@b.c>
+Date: Sat, 7 Nov 2026 16:15:26 +0500
+Subject: [PATCH 14/14] generic: pending-6.18: adjust 675-02 context for kernel
+ 6.18.60
+
+The 6.18.5x stable updates changed the IPv6 branch of nf_ct_bridge_pre()
+to use skb_ipv6_payload_len(skb) instead of
+ntohs(ipv6_hdr(skb)->payload_len). Update the context line of the
+nf_ct_bridge_pre() hunk in 675-02 to match; the patch's own changes are
+untouched.
+
+All 730 kernel patches replay in order against linux-6.18.60 without
+rejects (675-03 and 675-04 apply with fuzz). Not compiled or run on
+hardware.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01LLsZaS8jKfUFNL6oT3QqL1
+---
+ ...2-netfilter-bridge-Add-conntrack-double-vlan-and-pppoe.patch | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/target/linux/generic/pending-6.18/675-02-netfilter-bridge-Add-conntrack-double-vlan-and-pppoe.patch b/target/linux/generic/pending-6.18/675-02-netfilter-bridge-Add-conntrack-double-vlan-and-pppoe.patch
+index 4a59f4fd..2464a355 100644
+--- a/target/linux/generic/pending-6.18/675-02-netfilter-bridge-Add-conntrack-double-vlan-and-pppoe.patch
++++ b/target/linux/generic/pending-6.18/675-02-netfilter-bridge-Add-conntrack-double-vlan-and-pppoe.patch
+@@ -238,7 +238,7 @@ Signed-off-by: Bohdan Chubuk <chbgdn@gmail.com>
+ +		if (!pskb_may_pull(skb, offset + sizeof(struct ipv6hdr)))
+ +			goto do_not_track;
+  
+- 		len = sizeof(struct ipv6hdr) + ntohs(ipv6_hdr(skb)->payload_len);
++ 		len = sizeof(struct ipv6hdr) + skb_ipv6_payload_len(skb);
+ -		if (pskb_trim_rcsum(skb, len))
+ -			return NF_ACCEPT;
+ +		if (pppoe_len && pppoe_len != len)

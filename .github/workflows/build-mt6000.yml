@@ -1,6 +1,6 @@
 name: Build GL-MT6000 (main + bridge offload)
 
-# GL-MT6000 sysupgrade image: OpenWrt main (pinned to 7eb9f10) + PR #24038 (L2 bridge offload).
+# GL-MT6000 sysupgrade image: OpenWrt main (pinned to 7e8bfcf) + PR #24038 (L2 bridge offload).
 # Run from the Actions tab. No secrets are used.
 #
 # dry_run = true : fetch sources, apply patches, fetch feeds, make defconfig, run pre-checks, then build host
@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "rebased = bridge-offload mbox on main 7eb9f10; pr = PR #24038 head db25d82 (older base)"
+        description: "rebased = bridge-offload mbox on main 7e8bfcf; pr = PR #24038 head db25d82 (older base)"
         default: rebased
         type: choice
         options: [rebased, pr]
@@ -56,8 +56,8 @@ jobs:
             git fetch origin pull/24038/head
             git checkout -q db25d8281e688923ae3b8a893d3198f3d7b8737c
           else
-            git checkout -q 7eb9f10a83324d8980e8088bb295fc28a96cd15b
-            git am --3way ../bundle/bridge-offload-on-main-7eb9f10.mbox
+            git checkout -q 7e8bfcfe76204efc9433be341642901876eb555b
+            git am --3way ../bundle/bridge-offload-on-main-7e8bfcf.mbox
           fi
           git log -1 --format='source commit: %H %s'
 
@@ -141,7 +141,7 @@ jobs:
             openwrt/.config
           if-no-files-found: ignore
 
-      - name: Publish logs to branch ci-logs
+      - name: Publish logs to branch ci-logs-dry / ci-logs-build
         if: ${{ always() }}
         run: |
           rm -rf /tmp/ci-logs && mkdir -p /tmp/ci-logs
@@ -159,9 +159,10 @@ jobs:
           fi
           echo "run ${{ github.run_id }} mode=${{ inputs.mode }} dry_run=${{ inputs.dry_run }}" >> /tmp/ci-logs/RUN.txt
           cd /tmp/ci-logs
-          git init -q -b ci-logs
+          BR=ci-logs-$([ "${{ inputs.dry_run }}" = "true" ] && echo dry || echo build)
+          git init -q -b "$BR"
           git config user.email ci@example.com
           git config user.name ci
           git add -A
           git commit -q -m "logs for run ${{ github.run_id }}"
-          git push -q --force "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" ci-logs:ci-logs
+          git push -q --force "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" "$BR:$BR"
