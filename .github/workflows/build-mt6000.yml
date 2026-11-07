@@ -1,6 +1,6 @@
 name: Build GL-MT6000 (main + bridge offload)
 
-# GL-MT6000 sysupgrade image: OpenWrt main (pinned to 7e8bfcf) + PR #24038 (L2 bridge offload).
+# GL-MT6000 sysupgrade image: OpenWrt main (pinned to 7efbba7) + PR #24038 (L2 bridge offload).
 # Run from the Actions tab. No secrets are used.
 #
 # dry_run = true : fetch sources, apply patches, fetch feeds, make defconfig, run pre-checks, then build host
@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "rebased = bridge-offload mbox on main 7e8bfcf; pr = PR #24038 head db25d82 (older base)"
+        description: "rebased = bridge-offload mbox on main 7efbba7; pr = PR #24038 head db25d82 (older base)"
         default: rebased
         type: choice
         options: [rebased, pr]
@@ -56,8 +56,8 @@ jobs:
             git fetch origin pull/24038/head
             git checkout -q db25d8281e688923ae3b8a893d3198f3d7b8737c
           else
-            git checkout -q 7e8bfcfe76204efc9433be341642901876eb555b
-            git am --3way ../bundle/bridge-offload-on-main-7e8bfcf.mbox
+            git checkout -q 7efbba7631b5401b9f470e28fca0d6a18f579f83
+            git am --3way ../bundle/bridge-offload-on-main-7efbba7.mbox
           fi
           git log -1 --format='source commit: %H %s'
 

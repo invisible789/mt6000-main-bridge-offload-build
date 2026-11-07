@@ -8,7 +8,7 @@
 #     zlib1g-dev file wget
 #
 # Environment options:
-#   MODE=rebased   (default) apply bridge-offload-on-main-7e8bfcf.mbox on top of main commit 7e8bfcf
+#   MODE=rebased   (default) apply bridge-offload-on-main-7efbba7.mbox on top of main commit 7efbba7
 #   MODE=pr        exactly the PR head commit db25d82 (older base, 2026-09-18)
 #   DRY_RUN=1      get sources, apply patches, fetch feeds, run the pre-checks, then STOP
 #                  (no compile; takes minutes; safe to run first)
@@ -27,8 +27,8 @@ MODE="${MODE:-rebased}"
 DRY_RUN="${DRY_RUN:-0}"
 OPENWRT_REPO="${OPENWRT_REPO:-https://github.com/openwrt/openwrt}"
 PR_SHA=db25d8281e688923ae3b8a893d3198f3d7b8737c
-BASE_SHA=7e8bfcfe76204efc9433be341642901876eb555b
-MBOX="$HERE/bridge-offload-on-main-7e8bfcf.mbox"
+BASE_SHA=7efbba7631b5401b9f470e28fca0d6a18f579f83
+MBOX="$HERE/bridge-offload-on-main-7efbba7.mbox"
 
 if [ "$DRY_RUN" != "1" ] && [ "$(id -u)" -eq 0 ]; then
     echo "Do not run the real build as root (OpenWrt refuses). DRY_RUN=1 is allowed."

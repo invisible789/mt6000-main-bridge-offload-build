@@ -1,4 +1,4 @@
-From 9a4cd9813d042ecd4489015a42fd12ba215d6f7b Mon Sep 17 00:00:00 2001
+From 0eb31ccd90c8fbddb05b13c48fea4ee837dbb7d2 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 06:02:15 +0300
 Subject: [PATCH 01/15] kernel: add kmod-nf-conntrack-bridge package
@@ -46,7 +46,7 @@ index 5d3d2858..296fbb5f 100644
 2.43.0
 
 
-From ed0c50a70ef6a353554ad8f227953d3bcaf86b82 Mon Sep 17 00:00:00 2001
+From e509d3b184b0f51ca3ddd6600087d2c3b3414b3f Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 05:22:59 +0300
 Subject: [PATCH 02/15] generic: pending-6.18: add nft_flow_offload bridge
@@ -2706,7 +2706,7 @@ index 00000000..468f7b1f
 2.43.0
 
 
-From 1db3e748bf594b91de9b6ee7fa0f833b12cb98bb Mon Sep 17 00:00:00 2001
+From 6da529d6561f50d8a11a35a5607abfefb55f6c67 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 07:56:39 +0300
 Subject: [PATCH 03/15] generic: pending-6.18: set hw_ifidx in bridge flow
@@ -2773,7 +2773,7 @@ index 00000000..dabcb5fb
 2.43.0
 
 
-From 43e2dc4615805747b8f1bb225f4d371735d7f44c Mon Sep 17 00:00:00 2001
+From 60a7c92cb1721700660752fc97069212d384afc1 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 10:17:58 +0300
 Subject: [PATCH 04/15] generic: pending-6.18: remove WARN_ON from
@@ -2838,7 +2838,7 @@ index 00000000..e08e9d01
 2.43.0
 
 
-From 4fb405fd2ca80e526a4dbf80e4b9de8332621aa5 Mon Sep 17 00:00:00 2001
+From bb7c2657ea82517e47d156f896280d97104e7652 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 06:22:52 +0300
 Subject: [PATCH 05/15] airoha: fix 915-01 DSCP offload patch for bridge
@@ -2878,7 +2878,7 @@ index 414f6935..a25a639a 100644
 2.43.0
 
 
-From f508f1853c83ccab86c7bbbe23c3fe50ece4a4c1 Mon Sep 17 00:00:00 2001
+From af529b2afed03e67d3025ea60619be4a43900513 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Sat, 4 Jul 2026 01:56:30 +0300
 Subject: [PATCH 06/15] netfilter: hack-6.18: handle DEV_PATH_BR_VLAN_KEEP_HW
@@ -2928,7 +2928,7 @@ index eeb6db04..af1c3e8d 100644
 2.43.0
 
 
-From 7321fc2278a234a2a16ef52fa5dd28f015be256d Mon Sep 17 00:00:00 2001
+From 51920a14b2a7564d9354d71e7b8ffe801366a137 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 08:24:50 +0300
 Subject: [PATCH 07/15] firewall4: add bridge flowtable support
@@ -3045,7 +3045,7 @@ index 00000000..cf324e84
 2.43.0
 
 
-From c45360603beeb9dd17f568fc02e494bffe2c2da3 Mon Sep 17 00:00:00 2001
+From f93ffcc9b3a19f0bb6dfaa749b53d5714105ea4e Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 09:21:24 +0300
 Subject: [PATCH 08/15] airoha: an7581: add kmod-nf-conntrack-bridge to default
@@ -3076,7 +3076,7 @@ index 70f79b4c..6ac77875 100644
 2.43.0
 
 
-From 91a5befd416cd3cf0c38760fa1cdfe207bf7dfa7 Mon Sep 17 00:00:00 2001
+From 1332b8eb9e16f04a582cdd7a0ed0cf19fa1a2379 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Sat, 4 Jul 2026 01:08:33 +0300
 Subject: [PATCH 09/15] mediatek: filogic: add kmod-nf-conntrack-bridge to
@@ -3109,7 +3109,7 @@ index 1df1acc6..1354c47e 100644
 2.43.0
 
 
-From ba924db198bbf10be4b514560f60d2fdbd43b93a Mon Sep 17 00:00:00 2001
+From 8e995a5fe24642ad352e78f1d8fa4161d0a72714 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Fri, 3 Jul 2026 23:21:42 +0300
 Subject: [PATCH 10/15] airoha: an7581: add hotplug script to reload firewall
@@ -3162,7 +3162,7 @@ index 00000000..2a5b2dd3
 2.43.0
 
 
-From 17b229ef2bc4612bc78c415a879437413f874757 Mon Sep 17 00:00:00 2001
+From 0a5036048515f5d1e3ec117b043a2b8ac6a33ae4 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Fri, 3 Jul 2026 23:23:50 +0300
 Subject: [PATCH 11/15] mediatek: filogic: add hotplug script to reload
@@ -3215,7 +3215,7 @@ index 00000000..2a5b2dd3
 2.43.0
 
 
-From b3aaa82430128ec27e3d10ab4e0be83dd5ba6225 Mon Sep 17 00:00:00 2001
+From 5216ac90e5611dd6eab0dda45675cb8f55a485fd Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Fri, 18 Sep 2026 19:03:33 +0300
 Subject: [PATCH 12/15] generic: refresh kernel 6.18 patches
@@ -3984,7 +3984,7 @@ index e08e9d01..b38af15f 100644
 2.43.0
 
 
-From cefc1bbc7bd6cf483ba2f60e1f076014bbf87ee3 Mon Sep 17 00:00:00 2001
+From da0c873702477c110219962ad185f4eb377da139 Mon Sep 17 00:00:00 2001
 From: t <a@b.c>
 Date: Sun, 1 Nov 2026 05:48:28 +0500
 Subject: [PATCH 13/15] generic: pending-6.18: port bridge offload series to
@@ -4216,7 +4216,7 @@ index 702bad69..b90b1103 100644
 2.43.0
 
 
-From fef1f5dc6636e438cb7ca8acfa137220cb4de2f0 Mon Sep 17 00:00:00 2001
+From f1e473a3cdfdc0592928059799ed43842321870c Mon Sep 17 00:00:00 2001
 From: t <a@b.c>
 Date: Sat, 7 Nov 2026 16:15:26 +0500
 Subject: [PATCH 14/15] generic: pending-6.18: adjust 675-02 context for kernel
@@ -4255,7 +4255,7 @@ index 4a59f4fd..2464a355 100644
 2.43.0
 
 
-From c1a46ad4d8bb79a58e5c837ef44b528e2b7613ca Mon Sep 17 00:00:00 2001
+From c02a7ad4dfb7a04ecedf9078f4ea1c63e0d640dd Mon Sep 17 00:00:00 2001
 From: t <a@b.c>
 Date: Sat, 7 Nov 2026 20:28:58 +0500
 Subject: [PATCH 15/15] mediatek: filogic: make the fw4 bridge-reload hotplug

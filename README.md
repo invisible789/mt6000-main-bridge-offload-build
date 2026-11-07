@@ -1,6 +1,6 @@
 # GL-MT6000 build: OpenWrt main + PR #24038 (L2 bridge offload)
 
-Sysupgrade image for the GL-MT6000 built from **current OpenWrt main (pinned: `7e8bfcf`, kernel 6.18)** with
+Sysupgrade image for the GL-MT6000 built from **current OpenWrt main (pinned: `7efbba7`, kernel 6.18)** with
 **OpenWrt PR #24038** (bridge-aware flow offload for a dumb AP) applied on top. It replaces `bridger` (do not install it).
 The PR is still a **draft** and is not merged, so this is a snapshot-style build, not a stable release.
 
@@ -9,8 +9,8 @@ since, including the mtk_wed fixes (ring free on detach, `dma_unmap_single` size
 PPE flow-priority change, the flowtable roaming/VLAN-ID fixes, and newer mt76/mac80211.
 
 ## How it was rebased
-The 12 PR commits plus three of mine (15 patches) are in `bridge-offload-on-main-7e8bfcf.mbox` and apply with plain
-`git am` on main `7e8bfcf`. Differences from the PR as posted:
+The 12 PR commits plus three of mine (15 patches) are in `bridge-offload-on-main-7efbba7.mbox` and apply with plain
+`git am` on main `7efbba7`. Differences from the PR as posted:
 - **Port commit (13/15), the main code change:** main backports upstream v7.3 flowtable work (`706-01`:
   `dev_fill_forward_path(ctx, stack)`, `706-02`: the `ieee80211` path flag) that the PR predates, so the PR's `675-06`
   (`dev_fill_bridge_path`) did not apply to the kernel. `675-06` was reworked on the new signature (shared walk in
