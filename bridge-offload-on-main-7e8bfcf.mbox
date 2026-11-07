@@ -1,7 +1,7 @@
 From 9a4cd9813d042ecd4489015a42fd12ba215d6f7b Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 06:02:15 +0300
-Subject: [PATCH 01/14] kernel: add kmod-nf-conntrack-bridge package
+Subject: [PATCH 01/15] kernel: add kmod-nf-conntrack-bridge package
 
 Add package definition for bridge connection tracking module
 (CONFIG_NF_CONNTRACK_BRIDGE), which provides native bridge
@@ -46,7 +46,7 @@ index 5d3d2858..296fbb5f 100644
 From ed0c50a70ef6a353554ad8f227953d3bcaf86b82 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 05:22:59 +0300
-Subject: [PATCH 02/14] generic: pending-6.18: add nft_flow_offload bridge
+Subject: [PATCH 02/15] generic: pending-6.18: add nft_flow_offload bridge
  offload
 
 Backport Eric Woudstra bridge fastpath series adding nftables bridge
@@ -2703,7 +2703,7 @@ index 00000000..468f7b1f
 From 1db3e748bf594b91de9b6ee7fa0f833b12cb98bb Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 07:56:39 +0300
-Subject: [PATCH 03/14] generic: pending-6.18: set hw_ifidx in bridge flow
+Subject: [PATCH 03/15] generic: pending-6.18: set hw_ifidx in bridge flow
  offload path
 
 The bridge fastpath (nft_dev_fill_bridge_path) was not setting
@@ -2767,7 +2767,7 @@ index 00000000..dabcb5fb
 From 43e2dc4615805747b8f1bb225f4d371735d7f44c Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 10:17:58 +0300
-Subject: [PATCH 04/14] generic: pending-6.18: remove WARN_ON from
+Subject: [PATCH 04/15] generic: pending-6.18: remove WARN_ON from
  dev_fill_bridge_path()
 
 When the bridge floods a packet (unknown unicast, broadcast, multicast),
@@ -2829,7 +2829,7 @@ index 00000000..e08e9d01
 From 4fb405fd2ca80e526a4dbf80e4b9de8332621aa5 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 06:22:52 +0300
-Subject: [PATCH 05/14] airoha: fix 915-01 DSCP offload patch for bridge
+Subject: [PATCH 05/15] airoha: fix 915-01 DSCP offload patch for bridge
  fastpath changes
 
 Update Lorenzo Bianconi DSCP offload (915-01) to apply correctly
@@ -2866,7 +2866,7 @@ index 414f6935..a25a639a 100644
 From f508f1853c83ccab86c7bbbe23c3fe50ece4a4c1 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Sat, 4 Jul 2026 01:56:30 +0300
-Subject: [PATCH 06/14] netfilter: hack-6.18: handle DEV_PATH_BR_VLAN_KEEP_HW
+Subject: [PATCH 06/15] netfilter: hack-6.18: handle DEV_PATH_BR_VLAN_KEEP_HW
  in xt_FLOWOFFLOAD
 
 The DEV_PATH_BR_VLAN_KEEP_HW bridge vlan mode was introduced by
@@ -2913,7 +2913,7 @@ index eeb6db04..af1c3e8d 100644
 From 7321fc2278a234a2a16ef52fa5dd28f015be256d Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 08:24:50 +0300
-Subject: [PATCH 07/14] firewall4: add bridge flowtable support
+Subject: [PATCH 07/15] firewall4: add bridge flowtable support
 
 Generate a bridge-family flowtable (table bridge fw4, flowtable fb)
 when the offload device list contains bridge ports. The bridge
@@ -3027,7 +3027,7 @@ index 00000000..cf324e84
 From c45360603beeb9dd17f568fc02e494bffe2c2da3 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 09:21:24 +0300
-Subject: [PATCH 08/14] airoha: an7581: add kmod-nf-conntrack-bridge to default
+Subject: [PATCH 08/15] airoha: an7581: add kmod-nf-conntrack-bridge to default
  packages
 
 Enable bridge connection tracking by default on the AN7581 target.
@@ -3055,7 +3055,7 @@ index 70f79b4c..6ac77875 100644
 From 91a5befd416cd3cf0c38760fa1cdfe207bf7dfa7 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Sat, 4 Jul 2026 01:08:33 +0300
-Subject: [PATCH 09/14] mediatek: filogic: add kmod-nf-conntrack-bridge to
+Subject: [PATCH 09/15] mediatek: filogic: add kmod-nf-conntrack-bridge to
  default packages
 
 Enable bridge connection tracking by default on the filogic target.
@@ -3085,7 +3085,7 @@ index 1df1acc6..1354c47e 100644
 From ba924db198bbf10be4b514560f60d2fdbd43b93a Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Fri, 3 Jul 2026 23:21:42 +0300
-Subject: [PATCH 10/14] airoha: an7581: add hotplug script to reload firewall
+Subject: [PATCH 10/15] airoha: an7581: add hotplug script to reload firewall
  on bridge port add
 
 At boot the firewall starts before hostapd creates wireless interfaces
@@ -3135,7 +3135,7 @@ index 00000000..2a5b2dd3
 From 17b229ef2bc4612bc78c415a879437413f874757 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Fri, 3 Jul 2026 23:23:50 +0300
-Subject: [PATCH 11/14] mediatek: filogic: add hotplug script to reload
+Subject: [PATCH 11/15] mediatek: filogic: add hotplug script to reload
  firewall on bridge port add
 
 At boot the firewall starts before hostapd creates wireless interfaces
@@ -3185,7 +3185,7 @@ index 00000000..2a5b2dd3
 From b3aaa82430128ec27e3d10ab4e0be83dd5ba6225 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Fri, 18 Sep 2026 19:03:33 +0300
-Subject: [PATCH 12/14] generic: refresh kernel 6.18 patches
+Subject: [PATCH 12/15] generic: refresh kernel 6.18 patches
 
 Refreshed patches by running `make target/linux/refresh` for airoha
 against 6.18.52 after the bridge fastpath rebase. Besides hunk
@@ -3951,7 +3951,7 @@ index e08e9d01..b38af15f 100644
 From cefc1bbc7bd6cf483ba2f60e1f076014bbf87ee3 Mon Sep 17 00:00:00 2001
 From: t <a@b.c>
 Date: Sun, 1 Nov 2026 05:48:28 +0500
-Subject: [PATCH 13/14] generic: pending-6.18: port bridge offload series to
+Subject: [PATCH 13/15] generic: pending-6.18: port bridge offload series to
  ctx-based dev_fill_forward_path()
 
 OpenWrt main now backports "net: pass net_device_path_ctx to
@@ -4180,7 +4180,7 @@ index 702bad69..b90b1103 100644
 From fef1f5dc6636e438cb7ca8acfa137220cb4de2f0 Mon Sep 17 00:00:00 2001
 From: t <a@b.c>
 Date: Sat, 7 Nov 2026 16:15:26 +0500
-Subject: [PATCH 14/14] generic: pending-6.18: adjust 675-02 context for kernel
+Subject: [PATCH 14/15] generic: pending-6.18: adjust 675-02 context for kernel
  6.18.60
 
 The 6.18.5x stable updates changed the IPv6 branch of nf_ct_bridge_pre()
@@ -4212,3 +4212,89 @@ index 4a59f4fd..2464a355 100644
  -		if (pskb_trim_rcsum(skb, len))
  -			return NF_ACCEPT;
  +		if (pppoe_len && pppoe_len != len)
+
+From 63985e1b41d877c64c6e8c8f61a729c4dad3b5e5 Mon Sep 17 00:00:00 2001
+From: t <a@b.c>
+Date: Sat, 7 Nov 2026 20:28:58 +0500
+Subject: [PATCH 15/15] mediatek: filogic: make the fw4 bridge-reload hotplug
+ script robust
+
+The script that reloads firewall4 when a Wi-Fi netdev is added had three
+weaknesses:
+
+- It only matched phyN-apM and ap-mldN, so an SSID with a custom
+  "option ifname" was never added to the bridge flowtable. Match any
+  cfg80211 netdev through its sysfs "wireless" group (created before the
+  add uevent is sent) and keep the stock names as a fallback.
+- "flock -n" silently dropped the event of a second interface while a
+  reload was running. That reload may have listed the bridge ports before
+  the second device joined its bridge, leaving the device out of the
+  flowtable until some later event. Now the event waits for the lock
+  (up to 60 s), gives netifd time to enslave the device, and reloads only
+  if the device is still missing from the flowtable, so a boot burst
+  still costs a single reload.
+- The in-flowtable check is shared by both places that need it.
+
+Tested the control flow under dash with mocked nft, sysfs and firewall
+reload (7 scenarios: ignored action, non-wireless netdev, custom ifname,
+stock name, two-port boot burst, port bridged late during a reload,
+already present); the previous script fails two of them (custom ifname,
+late port). Not run on hardware.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01LLsZaS8jKfUFNL6oT3QqL1
+---
+ .../etc/hotplug.d/net/50-fw4-bridge-reload    | 35 +++++++++++++++----
+ 1 file changed, 29 insertions(+), 6 deletions(-)
+
+diff --git a/target/linux/mediatek/filogic/base-files/etc/hotplug.d/net/50-fw4-bridge-reload b/target/linux/mediatek/filogic/base-files/etc/hotplug.d/net/50-fw4-bridge-reload
+index 2a5b2dd3..60155d4e 100644
+--- a/target/linux/mediatek/filogic/base-files/etc/hotplug.d/net/50-fw4-bridge-reload
++++ b/target/linux/mediatek/filogic/base-files/etc/hotplug.d/net/50-fw4-bridge-reload
+@@ -2,17 +2,40 @@
+ 
+ [ "$ACTION" = "add" ] || exit 0
+ 
+-case "${DEVICENAME}" in
+-	phy*-ap*|ap-mld*) ;;
+-	*) exit 0 ;;
+-esac
++# Any wireless netdev: cfg80211 netdevs get the sysfs "wireless" group before
++# the uevent is sent. Keep the stock phyN-apM / ap-mldN names as a fallback.
++if [ ! -d "/sys/class/net/${DEVICENAME}/wireless" ]; then
++	case "${DEVICENAME}" in
++		phy*-ap*|ap-mld*) ;;
++		*) exit 0 ;;
++	esac
++fi
+ 
+-nft list flowtable bridge fw4 fb 2>/dev/null | grep -qw "\"${DEVICENAME}\"" && exit 0
++in_flowtable() {
++	nft list flowtable bridge fw4 fb 2>/dev/null | grep -qw "\"$1\""
++}
++
++in_flowtable "${DEVICENAME}" && exit 0
+ 
+ (
+ 	exec 9>/var/lock/fw4-bridge-reload.lock
+-	flock -n 9 || exit 0
++
++	# Serialise reloads, but wait for a running one instead of dropping this
++	# event: that reload may have listed the bridge ports before this device
++	# joined its bridge, which would leave the device out of the flowtable.
++	n=0
++	until flock -n 9; do
++		n=$((n + 1))
++		[ "$n" -ge 60 ] && exit 0
++		sleep 1
++	done
++
++	# Give netifd time to add the device to its bridge.
+ 	sleep 2
++
++	# A reload that ran while we waited may already have picked it up.
++	in_flowtable "${DEVICENAME}" && exit 0
++
+ 	/etc/init.d/firewall reload >/dev/null 2>&1
+ ) &
+ 
