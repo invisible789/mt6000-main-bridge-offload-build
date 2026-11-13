@@ -1,58 +1,47 @@
-# GL-MT6000 build: OpenWrt main + PR #24038 (L2 bridge offload)
+# GL-MT6000 build: OpenWrt main + PR #24038 (L2 bridge offload) + vsftpd + temp-status
 
-Sysupgrade image for the GL-MT6000 built from **current OpenWrt main (pinned: `7efbba7`, kernel 6.18)** with
+Sysupgrade image for the GL-MT6000 built from **current OpenWrt main (pinned: `e2ed57b`, 2026-11-13, kernel 6.18.60)** with
 **OpenWrt PR #24038** (bridge-aware flow offload for a dumb AP) applied on top. It replaces `bridger` (do not install it).
-The PR is still a **draft** and is not merged, so this is a snapshot-style build, not a stable release.
+The PR is still **not merged**, so this is a snapshot-style build, not a stable release.
 
-Compared with a build from the PR head alone (`db25d82`, 2026-09-18), this one also carries everything main gained
-since, including the mtk_wed fixes (ring free on detach, `dma_unmap_single` size, WED v2 `RESV_BUFF`), the mtk_eth_soc
-PPE flow-priority change, the flowtable roaming/VLAN-ID fixes, and newer mt76/mac80211.
+Extras on top of the offload build:
+- **vsftpd** (packages feed, the no-TLS variant). See the security note below before using it.
+- **luci-app-temp-status** (`gSpotx2f/luci-app-temp-status`, MIT, pinned commit `6d12781`). It is not in any OpenWrt feed, so the
+  workflow clones it into `package/` at that commit and builds it from source.
 
-## How it was rebased
-The 12 PR commits plus three of mine (15 patches) are in `bridge-offload-on-main-7efbba7.mbox` and apply with plain
-`git am` on main `7efbba7`. Differences from the PR as posted:
-- **Port commit (13/15), the main code change:** main backports upstream v7.3 flowtable work (`706-01`:
-  `dev_fill_forward_path(ctx, stack)`, `706-02`: the `ieee80211` path flag) that the PR predates, so the PR's `675-06`
-  (`dev_fill_bridge_path`) did not apply to the kernel. `675-06` was reworked on the new signature (shared walk in
-  `dev_fill_forward_path_common()`), and `675-11` sets `.ieee80211 = true` in the bridge path context, as main's own
-  `nft_dev_fill_forward_path()` does, so a Wi-Fi bridge port ends the software path at `DEV_PATH_IEEE80211`. The
-  whole kernel patch stack was replayed in order against the exact kernel and applies. **This port is not from the PR author, was not compiled
-  locally and has not been run on hardware.**
-- **Context fix (14/15):** the 6.18.5x stable updates (main is now on 6.18.60) changed one line in `nf_ct_bridge_pre()`
-  (`skb_ipv6_payload_len(skb)` instead of `ntohs(ipv6_hdr(skb)->payload_len)`), so the context line of the
-  `nf_ct_bridge_pre()` hunk in `675-02` was updated to match. The patch's own changes are untouched. All 730 kernel patches
-  (generic backport/pending/hack + mediatek) replay in order against linux-6.18.60 with no rejects; `675-03` and `675-04`
-  apply with fuzz. Not compiled or run on hardware until the CI build.
-- **Hotplug script (15/15):** `50-fw4-bridge-reload` (reloads firewall4 when a Wi-Fi netdev is added) now matches any cfg80211
-  netdev through `DEVTYPE=wlan` in its sysfs `uevent` file, not only `phyN-apM`/`ap-mldN`, so an SSID with a custom `ifname`
-  joins the bridge flowtable. (Checked on the GL-MT6000: the netdev has `DEVTYPE=wlan` there but no sysfs `wireless` directory,
-  so an earlier version of this commit that relied on that directory never matched.) It only reloads for devices that are
-  bridge ports (`brport`), and a second interface's event waits for a running reload (up to 60 s) instead of being dropped, then
-  reloads only if the device is still missing, so a boot burst is still one reload. The control flow was tested under `dash`
-  with mocked `nft`, sysfs and firewall reload (8 scenarios; the original script fails two of them). The `DEVTYPE=wlan`
-  match is confirmed on hardware; the rest of the script is not (the stock names go through the unchanged fallback).
-- Patch 6/12 (`DEV_PATH_BR_VLAN_KEEP_HW` in `xt_FLOWOFFLOAD`): main changed `hack-6.18/650-...` since the PR was written, so the
-  two-line `case DEV_PATH_BR_VLAN_KEEP_HW:` addition was re-applied on main's version of the file (hunk count 734 -> 736).
-- Patch 7/12 (firewall4): main moved firewall4 to `e6f600c` (2026-10-29). The PR's patch still applies (offsets only);
-  `PKG_RELEASE` is 2 instead of 3 because main's package release was reset by the version bump.
-- Patch 12/12 (refresh): only the PR's own `675-xx` refreshes were kept. Refreshes of files main maintains itself
-  (`650`, `721`, `731`, `915-01`) were dropped, and `699` stays deleted because main folded it into an upstream backport.
+## What the patch series is
+`bridge-offload-on-main-e2ed57b.mbox` holds the **10 current commits of PR #24038, unmodified** (cherry-picked onto main
+`e2ed57b`; the tree is identical to what `git am` produces). Nothing in it is mine any more:
+- 6 kernel/netfilter commits: the `nft_flow_offload` bridge offload series (`675-xx`), `hw_ifidx`, removal of the `WARN_ON`,
+  the `DEV_PATH_BR_VLAN_KEEP_HW` case in `xt_FLOWOFFLOAD`, the airoha `915-01` fix and a refresh of the kernel patches.
+- firewall4 `001` (bridge flowtable) and `002` ("harden bridge offload lifecycle"): hardware offload is probed for the bridge and
+  falls back to a software flowtable with a warning, bridge members behind VLAN devices are resolved, the bridge table is
+  removed on `fw4 stop`, and **fw4 now ships the `50-fw4-bridge-reload` hotplug script itself** (waits for the port to join its
+  bridge, queues events instead of dropping them, reloads for any bridge port).
+- `kmod-nft-bridge` is now the default package that carries `nf_conntrack_bridge` (`kmod-nf-conntrack-bridge` is gone).
+
+Earlier builds of this repo carried three commits of mine on top of the PR: a port of `675-06`/`675-11` to main's ctx-based
+`dev_fill_forward_path()` API, a context fix for kernel 6.18.60, and a replacement hotplug script. The PR author's version of
+the port is equivalent, and the hotplug script is now upstream, so all three were dropped.
 
 ## Build on GitHub (free machines)
 Actions -> "Build GL-MT6000 (main + bridge offload)" -> Run workflow.
 1. Tick **dry_run** first (about 30-60 min): sources, patches, feeds, `make defconfig`, pre-checks, then host tools and the
    firewall4 + kernel `prepare` steps, which apply every package and kernel patch for real. No compile of the kernel.
-2. Untick it for the full build (about 2-4 h, an estimate): full build, post-checks, image uploaded as an artifact.
+2. Untick it for the full build (about 1-4 h): full build, post-checks, image uploaded as an artifact.
 
 Or locally on Linux/WSL (normal user, ~25 GB free): `DRY_RUN=1 VALIDATE_PATCHES=1 bash build-mt6000.sh`, then `bash build-mt6000.sh`.
-`MODE=pr` builds the PR head `db25d82` as before.
+`MODE=pr` builds the PR head commit `5df179e` as posted (older base `706052b`).
 
 ## What check.sh verifies for you
-- **Before the long build:** kernel 6.18; the 12 PR patches, firewall4 patch, hotplug script and new kmod are in the tree; the
-  main-side WED/PPE fixes are present; the MT6000 profile and WED firmware exist; `.config` selects the MT6000, luci, chrony,
-  iperf3, ethtool, kmod-nf-conntrack-bridge, kmod-nft-offload, nftables-json, firewall4 and NOT bridger.
-- **After the build:** image exists and is >8 MB (+ SHA256), manifest lists firewall4, the new kmod, mt7915e and the WED
-  firmware, no bridger, kernel 6.18; the rootfs has the hotplug script, fw4 with bridge-flowtable support and `nf_conntrack_bridge.ko`.
+- **Before the long build:** kernel 6.18; the PR's kernel patches, both firewall4 patches (including the hotplug script and the
+  hardware-offload probe) and `kmod-nft-bridge` are in the tree; no per-target copy of the hotplug script exists (it would
+  collide with fw4's); main's WED/PPE fixes are present; the MT6000 profile and WED firmware exist; feeds provide `vsftpd`; the
+  temp-status package is in `package/`; `.config` selects the MT6000, luci, chrony, iperf3, ethtool, `kmod-nft-bridge`,
+  `kmod-nft-offload`, nftables-json, firewall4, vsftpd, luci-app-temp-status and NOT bridger.
+- **After the build:** image exists and is >8 MB (+ SHA256); the manifest lists the above and kernel 6.18; the rootfs has fw4's
+  hotplug script (queued version), fw4 with bridge flowtable support and the lifecycle hardening, `nf_conntrack_bridge.ko`,
+  `/usr/sbin/vsftpd` and the temp-status rpcd script.
 - Any failure prints `CHECKS FAILED - do not flash` and exits non-zero.
 
 ## What no automated check can tell you
@@ -64,24 +53,38 @@ Whether the image **boots and offloads on your router.** Before flashing:
 
 ## Flash
 Only the `*-sysupgrade.bin`, never a factory image. Keep your settings with `sysupgrade /tmp/<file>`, or start clean with
-`sysupgrade -n /tmp/<file>`. This is a new kernel and a new PPE/WED code path, so a clean start is the safer first test.
+`sysupgrade -n /tmp/<file>`.
 
-## Dumb-AP configuration (unchanged from the PR-head build)
+## vsftpd: lock it down first
+The package's defaults: `anonymous_enable=NO`, but `local_enable=YES` and `write_enable=YES` with `check_shell=NO`, no chroot and
+no TLS. The init script enables it at boot, so after flashing **any local account, including root, can log in over plain FTP and
+write anywhere**, from anything that can reach port 21 (your LAN zone accepts input). Before relying on it either
+`service vsftpd stop; service vsftpd disable`, or create a non-root user, set `local_root`/`chroot_local_user`, and keep root
+out of the FTP login list. The `vsftpd-tls` variant (+libopenssl) can encrypt logins if you need that; it conflicts with the
+plain package, so only one can be installed.
+
+## luci-app-temp-status
+Adds a temperature block to the LuCI Status -> Overview page (it reads `/sys/class/hwmon` and `/sys/class/thermal` through an
+rpcd ucode script; dependencies are `ucode` and `ucode-mod-fs`). After the first boot run `service rpcd restart` if the block
+does not appear.
+
+## Dumb-AP configuration (unchanged)
 - LAN: DHCP client (or static); no `wan`/`wan6`; `dnsmasq` and `odhcpd` disabled; chrony only; Wi-Fi country first.
 - **Firewall must be ON** (fw4 builds the bridge flowtable): `flow_offloading '1'` and `flow_offloading_hw '1'` in `defaults`,
   one minimal `lan` zone with input/output/forward ACCEPT, then `service firewall enable; service firewall restart`.
 - WED: `sed -i '$a options mt7915e wed_enable=Y' /etc/modules.conf; reboot`, then
   `cat /sys/module/mt7915e/parameters/wed_enable` -> `Y`.
 
-## Verify (during a long FTP/iperf3 transfer)
+## Verify
 ```
-nft list flowtable bridge fw4 fb          # must list your wired lan port AND phy0-ap0 / phy1-ap0
-grep -c ' BND ' /sys/kernel/debug/ppe0/entries
-grep -h 'WED_TX_MIB(1)' /sys/kernel/debug/wed0/*info
+nft list flowtable bridge fw4 fb          # devices: your wired lan ports AND phy0-ap0 / phy1-ap0, and "flags offload"
+logread | grep -i 'hardware bridge offloading'   # must print nothing: that message means fw4's probe failed and
+                                          # it fell back to a software flowtable (no "flags offload")
+grep ' BND ' /sys/kernel/debug/ppe0/entries      # during a transfer: your flow; ib2 dest port 8 = WDMA0 (WED)
 dmesg | grep -iE 'mtk_wed|wed|mt76|dma|oops|bug'
 ```
-Success = `BND` > 0 under load, WED_TX rising, CPU near idle. Then compare speed, loaded ping and CPU against the PR-head build,
-and run it for a day watching `logread` for Wi-Fi/WED restarts.
+Success = a bound flow for your transfer, `flags offload` present, CPU near idle. Run it for a day watching `logread` for
+Wi-Fi/WED restarts.
 
 ## Roll back
 Flash the previous sysupgrade image (`sysupgrade -n <old.bin>`), or use the recovery methods above, then restore the config backup.

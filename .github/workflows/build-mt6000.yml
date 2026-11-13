@@ -1,6 +1,7 @@
 name: Build GL-MT6000 (main + bridge offload)
 
-# GL-MT6000 sysupgrade image: OpenWrt main (pinned to 7efbba7) + PR #24038 (L2 bridge offload).
+# GL-MT6000 sysupgrade image: OpenWrt main (pinned to e2ed57b) + PR #24038 (L2 bridge offload),
+# plus vsftpd (packages feed) and luci-app-temp-status (gSpotx2f/luci-app-temp-status, pinned commit).
 # Run from the Actions tab. No secrets are used.
 #
 # dry_run = true : fetch sources, apply patches, fetch feeds, make defconfig, run pre-checks, then build host
@@ -12,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "rebased = bridge-offload mbox on main 7efbba7; pr = PR #24038 head db25d82 (older base)"
+        description: "rebased = bridge-offload mbox on main e2ed57b; pr = PR #24038 head 5df179e (older base)"
         default: rebased
         type: choice
         options: [rebased, pr]
@@ -54,10 +55,10 @@ jobs:
           cd openwrt
           if [ "${{ inputs.mode }}" = "pr" ]; then
             git fetch origin pull/24038/head
-            git checkout -q db25d8281e688923ae3b8a893d3198f3d7b8737c
+            git checkout -q 5df179eee9f194350924eaded9c625b10f2e3ff4
           else
-            git checkout -q 7efbba7631b5401b9f470e28fca0d6a18f579f83
-            git am --3way ../bundle/bridge-offload-on-main-7efbba7.mbox
+            git checkout -q e2ed57b957dc983fae535ca14a0969711537d752
+            git am --3way ../bundle/bridge-offload-on-main-e2ed57b.mbox
           fi
           git log -1 --format='source commit: %H %s'
 
@@ -66,6 +67,15 @@ jobs:
         run: |
           ./scripts/feeds update -a
           ./scripts/feeds install -a
+
+      - name: Extra package luci-app-temp-status (not in any feed; pinned commit)
+        working-directory: openwrt
+        run: |
+          rm -rf package/luci-app-temp-status
+          git clone -q https://github.com/gSpotx2f/luci-app-temp-status package/luci-app-temp-status
+          git -C package/luci-app-temp-status checkout -q 6d127817d92d758e35617620f9567a1336f5f8a5
+          git -C package/luci-app-temp-status log -1 --format='temp-status: %H %s'
+          rm -rf package/luci-app-temp-status/.git
 
       - name: Config
         working-directory: openwrt

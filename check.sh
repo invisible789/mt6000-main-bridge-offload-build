@@ -19,13 +19,14 @@ case "$STAGE" in
 pre)
   echo "[pre] patch set is present in the source tree"
   chk "kernel 6.18 is the mediatek default" grep -q 'KERNEL_PATCHVER:=6.18' target/linux/mediatek/Makefile
-  chk "kmod-nf-conntrack-bridge is defined" grep -q 'KernelPackage/nf-conntrack-bridge' package/kernel/linux/modules/netfilter.mk
-  chk "filogic installs kmod-nf-conntrack-bridge by default" grep -q 'kmod-nf-conntrack-bridge' target/linux/mediatek/filogic/target.mk
+  chk "kmod-nft-bridge is defined" grep -q 'KernelPackage/nft-bridge' package/kernel/linux/modules/netfilter.mk
+  chk "kmod-nft-bridge packages nf_conntrack_bridge" grep -q 'NFT_BRIDGE,CONFIG_NF_CONNTRACK_BRIDGE' include/netfilter.mk
+  chk "filogic installs kmod-nft-bridge by default" grep -q 'kmod-nft-bridge' target/linux/mediatek/filogic/target.mk
   chk "firewall4 bridge flowtable patch" test -f package/network/config/firewall4/patches/001-add-bridge-flowtable-support.patch
-  chk "filogic hotplug script (fw4 reload on bridge port add)" test -f target/linux/mediatek/filogic/base-files/etc/hotplug.d/net/50-fw4-bridge-reload
-  chk "hotplug script matches any wireless netdev (DEVTYPE=wlan)" grep -q 'DEVTYPE=wlan' target/linux/mediatek/filogic/base-files/etc/hotplug.d/net/50-fw4-bridge-reload
-  chk "hotplug script only reloads for bridge ports" grep -q '/brport' target/linux/mediatek/filogic/base-files/etc/hotplug.d/net/50-fw4-bridge-reload
-  chk "hotplug script waits for the lock instead of dropping the event" grep -q 'until flock -n 9' target/linux/mediatek/filogic/base-files/etc/hotplug.d/net/50-fw4-bridge-reload
+  chk "firewall4 patch 002 (bridge offload lifecycle hardening)" test -f package/network/config/firewall4/patches/002-harden-bridge-offload-lifecycle.patch
+  chk "firewall4 patch ships the queued bridge-reload hotplug script" grep -q 'hotplug.d/net/50-fw4-bridge-reload' package/network/config/firewall4/patches/002-harden-bridge-offload-lifecycle.patch
+  chk "firewall4 patch probes bridge hw offload (software fallback)" grep -q 'bridge_hw_offload' package/network/config/firewall4/patches/002-harden-bridge-offload-lifecycle.patch
+  chk "no per-target copy of the hotplug script (would collide with the fw4 one)" bash -c '! test -e target/linux/mediatek/filogic/base-files/etc/hotplug.d/net/50-fw4-bridge-reload'
   chk "kernel patch: nft_flow_offload bridgeflow" has_glob 'target/linux/generic/pending-6.18/*Add-bridgeflow-to-nft_flo*'
   chk "kernel patch: dev_fill_bridge_path" has_glob 'target/linux/generic/pending-6.18/*net-core-dev-Add-dev_fill_bridge_path*'
   chk "kernel patch: bridge conntrack double-vlan/pppoe" has_glob 'target/linux/generic/pending-6.18/*bridge-Add-conntrack-double-vlan-and-pppoe*'
@@ -42,13 +43,15 @@ pre)
     chk "feed package luci" test -e package/feeds/luci/luci
     chk "feed package chrony" test -e package/feeds/packages/chrony
     chk "feed package iperf3" test -e package/feeds/packages/iperf3
+    chk "feed package vsftpd" test -e package/feeds/packages/vsftpd
+    chk "extra package luci-app-temp-status is in package/" test -f package/luci-app-temp-status/Makefile
   else
     skip "feeds not fetched yet"
   fi
   if [ -f .config ]; then
     echo "[pre] .config selects what we expect"
     chk "device glinet_gl-mt6000 selected" grep -q '^CONFIG_TARGET_mediatek_filogic_DEVICE_glinet_gl-mt6000=y' .config
-    for p in luci chrony iperf3 ethtool kmod-nf-conntrack-bridge kmod-nft-offload nftables-json firewall4; do
+    for p in luci chrony iperf3 ethtool kmod-nft-bridge kmod-nft-offload nftables-json firewall4 vsftpd luci-app-temp-status; do
       chk "package $p selected" grep -q "^CONFIG_PACKAGE_${p}=y" .config
     done
     chk "bridger is NOT selected" bash -c '! grep -q "^CONFIG_PACKAGE_bridger=y" .config'
@@ -69,7 +72,7 @@ post)
   man=$(ls bin/targets/mediatek/filogic/*gl-mt6000*.manifest 2>/dev/null | head -1)
   if [ -n "$man" ]; then
     echo "[post] package manifest ($man)"
-    for p in firewall4 kmod-nf-conntrack-bridge kmod-nft-offload nftables-json kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware chrony luci; do
+    for p in firewall4 kmod-nft-bridge kmod-nft-offload nftables-json kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware chrony luci vsftpd luci-app-temp-status; do
       chk "manifest has $p" grep -q "^${p} - " "$man"
     done
     chk "manifest has no bridger" bash -c '! grep -q "^bridger - " "'"$man"'"'
@@ -80,9 +83,12 @@ post)
   root=$(ls -d build_dir/target-*/root-mediatek 2>/dev/null | head -1)
   if [ -n "$root" ]; then
     echo "[post] rootfs contents ($root)"
-    chk "hotplug script installed" test -f "$root/etc/hotplug.d/net/50-fw4-bridge-reload"
-    chk "installed hotplug script is the robust version" grep -q 'until flock -n 9' "$root/etc/hotplug.d/net/50-fw4-bridge-reload"
+    chk "hotplug script installed (from firewall4)" test -f "$root/etc/hotplug.d/net/50-fw4-bridge-reload"
+    chk "installed hotplug script is the queued version" grep -q 'flock -x 9' "$root/etc/hotplug.d/net/50-fw4-bridge-reload"
     chk "fw4 has bridge flowtable support" grep -q 'check_bridge_flowtable' "$root/usr/share/ucode/fw4.uc"
+    chk "fw4 has the lifecycle hardening (hw probe + fallback)" grep -q 'bridge_hw_offload' "$root/usr/share/ucode/fw4.uc"
+    chk "vsftpd binary installed" test -x "$root/usr/sbin/vsftpd"
+    chk "temp-status rpcd script installed" test -f "$root/usr/share/rpcd/ucode/luci.temp-status"
     chk "nf_conntrack_bridge.ko present" has_glob "$root/lib/modules/*/nf_conntrack_bridge.ko"
     chk "kernel modules are 6.18.x" has_glob "$root/lib/modules/6.18.*"
   else

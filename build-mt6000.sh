@@ -8,8 +8,8 @@
 #     zlib1g-dev file wget
 #
 # Environment options:
-#   MODE=rebased   (default) apply bridge-offload-on-main-7efbba7.mbox on top of main commit 7efbba7
-#   MODE=pr        exactly the PR head commit db25d82 (older base, 2026-09-18)
+#   MODE=rebased   (default) apply bridge-offload-on-main-e2ed57b.mbox (the 10 current PR commits, unmodified) on top of main commit e2ed57b
+#   MODE=pr        exactly the PR head commit 5df179e (PR branch, older base 706052b)
 #   DRY_RUN=1      get sources, apply patches, fetch feeds, run the pre-checks, then STOP
 #                  (no compile; takes minutes; safe to run first)
 #   VALIDATE_PATCHES=1  with DRY_RUN=1: also build host tools and run the firewall4 and kernel
@@ -26,9 +26,11 @@ JOBS="${JOBS:-$(nproc)}"
 MODE="${MODE:-rebased}"
 DRY_RUN="${DRY_RUN:-0}"
 OPENWRT_REPO="${OPENWRT_REPO:-https://github.com/openwrt/openwrt}"
-PR_SHA=db25d8281e688923ae3b8a893d3198f3d7b8737c
-BASE_SHA=7efbba7631b5401b9f470e28fca0d6a18f579f83
-MBOX="$HERE/bridge-offload-on-main-7efbba7.mbox"
+PR_SHA=5df179eee9f194350924eaded9c625b10f2e3ff4
+BASE_SHA=e2ed57b957dc983fae535ca14a0969711537d752
+MBOX="$HERE/bridge-offload-on-main-e2ed57b.mbox"
+TEMP_STATUS_REPO=https://github.com/gSpotx2f/luci-app-temp-status
+TEMP_STATUS_SHA=6d127817d92d758e35617620f9567a1336f5f8a5
 
 if [ "$DRY_RUN" != "1" ] && [ "$(id -u)" -eq 0 ]; then
     echo "Do not run the real build as root (OpenWrt refuses). DRY_RUN=1 is allowed."
@@ -85,11 +87,17 @@ EOF
 fi
 if [ "$DRY_RUN" = "1" ] && [ "${VALIDATE_PATCHES:-0}" != "1" ]; then
     ./scripts/feeds update packages luci
-    ./scripts/feeds install luci chrony iperf3
+    ./scripts/feeds install luci chrony iperf3 vsftpd
 else
     ./scripts/feeds update -a
     ./scripts/feeds install -a
 fi
+
+step "Extra package: luci-app-temp-status (not in any OpenWrt feed; pinned commit)"
+rm -rf package/luci-app-temp-status
+git clone -q "$TEMP_STATUS_REPO" package/luci-app-temp-status
+git -C package/luci-app-temp-status checkout -q "$TEMP_STATUS_SHA"
+rm -rf package/luci-app-temp-status/.git
 
 step "Pre-build checks"
 bash "$HERE/check.sh" pre "$PWD"
