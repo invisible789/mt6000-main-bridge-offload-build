@@ -1,0 +1,40 @@
+make[2]: Entering directory '/home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/scripts/config'
+make[2]: 'conf' is up to date.
+make[2]: Leaving directory '/home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/scripts/config'
+make[1]: Entering directory '/home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt'
+make[2]: Entering directory '/home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/package/network/config/firewall4'
+mkdir -p /home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/dl
+SHELL= flock /home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/tmp/.firewall4-2026.11.08~3722eadc.tar.zst.flock -c '  	/home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/scripts/download.pl "/home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/dl" "firewall4-2026.11.08~3722eadc.tar.zst" "a95c6cfe419c7d4e22bda5608aa6e46c67dadc9c7096879702d614cc498759d0" "" || (  	echo "Checking out files from the git repository..."; mkdir -p /home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/tmp/dl && cd /home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/tmp/dl && rm -rf firewall4-2026.11.08~3722eadc && [ \! -d firewall4-2026.11.08~3722eadc ] && git clone  https://git.openwrt.org/project/firewall4.git firewall4-2026.11.08~3722eadc && (cd firewall4-2026.11.08~3722eadc && git checkout 3722eadc088c3ab81389596ca9796112b436583a) && export TAR_TIMESTAMP=`cd firewall4-2026.11.08~3722eadc && git log -1 --no-show-signature --format='\''@%ct'\''` && echo "Generating formal git archive (apply .gitattributes rules)" && (cd firewall4-2026.11.08~3722eadc && git config core.abbrev 8 && git archive --format=tar HEAD --output=../firewall4-2026.11.08~3722eadc.tar.git) &&  tar --numeric-owner --owner=0 --group=0 --ignore-failed-read -C firewall4-2026.11.08~3722eadc -f firewall4-2026.11.08~3722eadc.tar.git -r .git .gitmodules 2>/dev/null  && rm -rf firewall4-2026.11.08~3722eadc && mkdir firewall4-2026.11.08~3722eadc && tar -C firewall4-2026.11.08~3722eadc -xf firewall4-2026.11.08~3722eadc.tar.git && (cd firewall4-2026.11.08~3722eadc && git submodule update --init --recursive --  && rm -rf .git .gitmodules) && echo "Packing checkout..." && 	tar --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name ${TAR_TIMESTAMP:+--mtime="$TAR_TIMESTAMP"} -c firewall4-2026.11.08~3722eadc | 	zstd -T0 --ultra -20 -c > /home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/tmp/dl/firewall4-2026.11.08~3722eadc.tar.zst && mv /home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/tmp/dl/firewall4-2026.11.08~3722eadc.tar.zst /home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/dl/ && rm -rf firewall4-2026.11.08~3722eadc;  )  && ( file_hash="$(/home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/staging_dir/host/bin/mkhash sha256 "/home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/dl/firewall4-2026.11.08~3722eadc.tar.zst")"; [ "$file_hash" = "a95c6cfe419c7d4e22bda5608aa6e46c67dadc9c7096879702d614cc498759d0" ] || [ "a95c6cfe419c7d4e22bda5608aa6e46c67dadc9c7096879702d614cc498759d0" = "skip" ] || { echo "Hash mismatch for file firewall4-2026.11.08~3722eadc.tar.zst: expected a95c6cfe419c7d4e22bda5608aa6e46c67dadc9c7096879702d614cc498759d0, got $file_hash"; false; }; )    '
++ curl -f --connect-timeout 5 --retry 3 --location https://sources.cdn.openwrt.org/firewall4-2026.11.08~3722eadc.tar.zst
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100 59924  100 59924    0     0  1419k      0 --:--:-- --:--:-- --:--:-- 1427k
+make[2]: Leaving directory '/home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/package/network/config/firewall4'
+time: package/network/config/firewall4/download#0.06#0.01#0.11
+make[1]: Leaving directory '/home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt'
+make[2]: Entering directory '/home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/scripts/config'
+make[2]: 'conf' is up to date.
+make[2]: Leaving directory '/home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/scripts/config'
+make[1]: Entering directory '/home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt'
+make[2]: Entering directory '/home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/package/network/config/firewall4'
+touch /home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/build_dir/target-aarch64_cortex-a53_musl/firewall4-2026.11.08~3722eadc/.prepared_1a137cc9edd3936a89d6f0a020298fdb_6664517399ebbbc92a37c5bb081b5c53_check
+. /home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/include/shell.sh; zstdcat /home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/dl/firewall4-2026.11.08~3722eadc.tar.zst | tar -C /home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/build_dir/target-aarch64_cortex-a53_musl/firewall4-2026.11.08~3722eadc/.. -xf -
+find /home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/build_dir/target-aarch64_cortex-a53_musl/firewall4-2026.11.08~3722eadc -mindepth 1 -type f -not -name '.*' -not -name 'version.date' -printf '%T@\n' 2>/dev/null | cut -d. -f1 | sort -n | tail -n1 > /home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/build_dir/target-aarch64_cortex-a53_musl/firewall4-2026.11.08~3722eadc/version.date
+[ ! -d ./src/ ] || cp -fpR ./src/. /home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/build_dir/target-aarch64_cortex-a53_musl/firewall4-2026.11.08~3722eadc
+
+Applying /home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/package/network/config/firewall4/patches/001-add-bridge-flowtable-support.patch using plaintext: 
+patching file root/usr/share/ucode/fw4.uc
+Hunk #1 succeeded at 622 (offset 33 lines).
+patching file root/usr/share/firewall4/templates/ruleset.uc
+
+Applying /home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/package/network/config/firewall4/patches/002-harden-bridge-offload-lifecycle.patch using plaintext: 
+patching file root/usr/share/ucode/fw4.uc
+Hunk #1 succeeded at 527 (offset 39 lines).
+Hunk #2 succeeded at 631 (offset 33 lines).
+patching file root/usr/share/firewall4/templates/ruleset.uc
+patching file root/sbin/fw4
+patching file root/etc/hotplug.d/net/50-fw4-bridge-reload
+touch /home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/build_dir/target-aarch64_cortex-a53_musl/firewall4-2026.11.08~3722eadc/.prepared_1a137cc9edd3936a89d6f0a020298fdb_6664517399ebbbc92a37c5bb081b5c53
+make[2]: Leaving directory '/home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt/package/network/config/firewall4'
+time: package/network/config/firewall4/prepare#0.03#0.02#0.06
+make[1]: Leaving directory '/home/runner/work/mt6000-main-bridge-offload-build/mt6000-main-bridge-offload-build/openwrt'
