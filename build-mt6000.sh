@@ -8,7 +8,7 @@
 #     zlib1g-dev file wget
 #
 # Environment options:
-#   MODE=rebased   (default) apply bridge-offload-on-main-e2ed57b.mbox (the 10 current PR commits, unmodified) on top of main commit e2ed57b
+#   MODE=rebased   (default) apply bridge-offload-on-main-393efd7.mbox (the 10 current PR commits, unmodified) on top of main commit 393efd7
 #   MODE=pr        exactly the PR head commit 5df179e (PR branch, older base 706052b)
 #   DRY_RUN=1      get sources, apply patches, fetch feeds, run the pre-checks, then STOP
 #                  (no compile; takes minutes; safe to run first)
@@ -27,8 +27,8 @@ MODE="${MODE:-rebased}"
 DRY_RUN="${DRY_RUN:-0}"
 OPENWRT_REPO="${OPENWRT_REPO:-https://github.com/openwrt/openwrt}"
 PR_SHA=5df179eee9f194350924eaded9c625b10f2e3ff4
-BASE_SHA=e2ed57b957dc983fae535ca14a0969711537d752
-MBOX="$HERE/bridge-offload-on-main-e2ed57b.mbox"
+BASE_SHA=393efd7d74ce6c28e48f142fdb9028f09dc904c9
+MBOX="$HERE/bridge-offload-on-main-393efd7.mbox"
 TEMP_STATUS_REPO=https://github.com/gSpotx2f/luci-app-temp-status
 TEMP_STATUS_SHA=6d127817d92d758e35617620f9567a1336f5f8a5
 

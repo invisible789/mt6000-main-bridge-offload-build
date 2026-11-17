@@ -1,6 +1,6 @@
 # GL-MT6000 build: OpenWrt main + PR #24038 (L2 bridge offload) + vsftpd + temp-status
 
-Sysupgrade image for the GL-MT6000 built from **current OpenWrt main (pinned: `e2ed57b`, 2026-11-13, kernel 6.18.60)** with
+Sysupgrade image for the GL-MT6000 built from **current OpenWrt main (pinned: `393efd7`, 2026-11-16, kernel 6.18.60)** with
 **OpenWrt PR #24038** (bridge-aware flow offload for a dumb AP) applied on top. It replaces `bridger` (do not install it).
 The PR is still **not merged**, so this is a snapshot-style build, not a stable release.
 
@@ -10,8 +10,8 @@ Extras on top of the offload build:
   workflow clones it into `package/` at that commit and builds it from source.
 
 ## What the patch series is
-`bridge-offload-on-main-e2ed57b.mbox` holds the **10 current commits of PR #24038, unmodified** (cherry-picked onto main
-`e2ed57b`; the tree is identical to what `git am` produces). Nothing in it is mine any more:
+`bridge-offload-on-main-393efd7.mbox` holds the **10 current commits of PR #24038, unmodified** (cherry-picked onto main
+`393efd7`; the tree is identical to what `git am` produces). Nothing in it is mine any more:
 - 6 kernel/netfilter commits: the `nft_flow_offload` bridge offload series (`675-xx`), `hw_ifidx`, removal of the `WARN_ON`,
   the `DEV_PATH_BR_VLAN_KEEP_HW` case in `xt_FLOWOFFLOAD`, the airoha `915-01` fix and a refresh of the kernel patches.
 - firewall4 `001` (bridge flowtable) and `002` ("harden bridge offload lifecycle"): hardware offload is probed for the bridge and

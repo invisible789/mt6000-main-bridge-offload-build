@@ -33,6 +33,7 @@ pre)
   chk "xt_FLOWOFFLOAD handles DEV_PATH_BR_VLAN_KEEP_HW" grep -q 'case DEV_PATH_BR_VLAN_KEEP_HW' target/linux/generic/hack-6.18/650-netfilter-add-xt_FLOWOFFLOAD-target.patch
   echo "[pre] current-main fixes are in the tree"
   chk "mtk_wed: free rings during detach" has_glob 'target/linux/generic/pending-6.18/793-03-*mtk_wed-free-up-rings-during-detach*'
+  chk "mtk_wed: failed rx reset frees buffers once (799-01..03)" bash -c '[ "$(ls target/linux/generic/pending-6.18/799-0[123]-*mtk_wed* 2>/dev/null | wc -l)" = 3 ]'
   chk "mtk_wed: dma_unmap_single size fix" has_glob 'target/linux/generic/backport-6.18/*mtk_wed-Fix-dma_unmap_single-size*'
   chk "mtk_wed: WED v2 WDMA RESV_BUFF increase" has_glob 'target/linux/generic/backport-6.18/*mtk_wed-increase-WED-v2-WDMA-RESV_BUFF*'
   chk "mtk_eth_soc: PPE queries wireless driver for flow TID" has_glob 'target/linux/generic/pending-6.18/797-01-*query-the-wireless-driver*'

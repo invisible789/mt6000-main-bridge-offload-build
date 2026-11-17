@@ -1,6 +1,6 @@
 name: Build GL-MT6000 (main + bridge offload)
 
-# GL-MT6000 sysupgrade image: OpenWrt main (pinned to e2ed57b) + PR #24038 (L2 bridge offload),
+# GL-MT6000 sysupgrade image: OpenWrt main (pinned to 393efd7) + PR #24038 (L2 bridge offload),
 # plus vsftpd (packages feed) and luci-app-temp-status (gSpotx2f/luci-app-temp-status, pinned commit).
 # Run from the Actions tab. No secrets are used.
 #
@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "rebased = bridge-offload mbox on main e2ed57b; pr = PR #24038 head 5df179e (older base)"
+        description: "rebased = bridge-offload mbox on main 393efd7; pr = PR #24038 head 5df179e (older base)"
         default: rebased
         type: choice
         options: [rebased, pr]
@@ -57,8 +57,8 @@ jobs:
             git fetch origin pull/24038/head
             git checkout -q 5df179eee9f194350924eaded9c625b10f2e3ff4
           else
-            git checkout -q e2ed57b957dc983fae535ca14a0969711537d752
-            git am --3way ../bundle/bridge-offload-on-main-e2ed57b.mbox
+            git checkout -q 393efd7d74ce6c28e48f142fdb9028f09dc904c9
+            git am --3way ../bundle/bridge-offload-on-main-393efd7.mbox
           fi
           git log -1 --format='source commit: %H %s'
 

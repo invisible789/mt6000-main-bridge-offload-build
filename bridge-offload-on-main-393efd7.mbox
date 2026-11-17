@@ -1,4 +1,4 @@
-From 27d8a10e6e13f1e2ddd60c853d95f178753e7b34 Mon Sep 17 00:00:00 2001
+From 0e62268c08c984a058f009b10098e7b9d66439fb Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 05:22:59 +0300
 Subject: [PATCH 01/10] generic: pending-6.18: add nft_flow_offload bridge
@@ -2545,7 +2545,7 @@ index 00000000..3bcf0e47
 2.43.0
 
 
-From 901f9673826114041dec3ec3606445241e876a29 Mon Sep 17 00:00:00 2001
+From 8a7d4771e1efee68e22e66261172ae82eb28c535 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 07:56:39 +0300
 Subject: [PATCH 02/10] generic: pending-6.18: set hw_ifidx in bridge flow
@@ -2607,7 +2607,7 @@ index 00000000..8f07ab3a
 2.43.0
 
 
-From b02cb6fbc1c377f7a33c9f5aa96c2d2d37c52a4d Mon Sep 17 00:00:00 2001
+From 20d53539143a7308caca7e2b77da393719603e77 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 10:17:58 +0300
 Subject: [PATCH 03/10] generic: pending-6.18: remove WARN_ON from
@@ -2667,7 +2667,7 @@ index 00000000..93d34906
 2.43.0
 
 
-From 675d6c0aa7933bdf1ee905e1a4b340df7ef60200 Mon Sep 17 00:00:00 2001
+From c80c12add0111397bca0703f0df56f60e32b2578 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 06:22:52 +0300
 Subject: [PATCH 04/10] airoha: fix 915-01 DSCP offload patch for bridge
@@ -2707,7 +2707,7 @@ index 414f6935..a25a639a 100644
 2.43.0
 
 
-From 0cf4f3d80b52aa53bb4e7ac4206e912f23e89070 Mon Sep 17 00:00:00 2001
+From 8247117fac454dc0b93bfbb3154682939968d7c9 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Sat, 4 Jul 2026 01:56:30 +0300
 Subject: [PATCH 05/10] netfilter: hack-6.18: handle DEV_PATH_BR_VLAN_KEEP_HW
@@ -2753,7 +2753,7 @@ index eeb6db04..af1c3e8d 100644
 2.43.0
 
 
-From 11cf516524156bf82bc3bb9d787261dbccb1beb2 Mon Sep 17 00:00:00 2001
+From d73e128caa32fe86e991ed046a659480be302bdd Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Wed, 1 Jul 2026 08:24:50 +0300
 Subject: [PATCH 06/10] firewall4: add bridge flowtable support
@@ -2870,7 +2870,7 @@ index 00000000..74bc550f
 2.43.0
 
 
-From 7367c342fc44685ca497132a6748d425ab793893 Mon Sep 17 00:00:00 2001
+From 54c2980105aee4750402d9c5d1c0e434c5b61268 Mon Sep 17 00:00:00 2001
 From: Daniel Pawlik <pawlik.dan@gmail.com>
 Date: Sun, 8 Nov 2026 08:11:04 +0200
 Subject: [PATCH 07/10] firewall4: harden bridge offload lifecycle
@@ -3079,7 +3079,7 @@ index 00000000..a4ea5dc9
 2.43.0
 
 
-From 1357261a294216a85b243a3cea386f8eea2d6128 Mon Sep 17 00:00:00 2001
+From 82f6ae7de44e74550d7ccafa9b08d19362ede4f3 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Sun, 8 Nov 2026 08:11:36 +0200
 Subject: [PATCH 08/10] airoha: an7581: use kmod-nft-bridge for bridge
@@ -3113,7 +3113,7 @@ index 70f79b4c..785cd355 100644
 2.43.0
 
 
-From 1aedce46d7d3ace1565f2b3d8a2319e5d5ffadee Mon Sep 17 00:00:00 2001
+From 9f08f0f6c6f3d0bc6fbeb583c0f0126b9ffe3542 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Sun, 8 Nov 2026 08:11:36 +0200
 Subject: [PATCH 09/10] mediatek: filogic: use kmod-nft-bridge for bridge
@@ -3149,7 +3149,7 @@ index 1df1acc6..d1796649 100644
 2.43.0
 
 
-From db03ea99b667b696094a6d59de5da42b7a43fa10 Mon Sep 17 00:00:00 2001
+From 8a8b53b92425af60528620c00bca00ccdd87c833 Mon Sep 17 00:00:00 2001
 From: Bohdan Chubuk <chbgdn@gmail.com>
 Date: Fri, 18 Sep 2026 19:03:33 +0300
 Subject: [PATCH 10/10] generic: refresh kernel 6.18 patches
