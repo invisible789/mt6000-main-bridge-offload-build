@@ -1,0 +1,6 @@
+[src] prepared kernel source (build_dir/target-aarch64_cortex-a53_musl/linux-mediatek_filogic/linux-6.18.64)
+  ok    mtk_wed: WED v2 WDMA RESV_BUFF is 0x80
+  ok    mt7986: arch timer clock-frequency is 12986200
+  ok    bridge offload patch applied (dev_fill_bridge_path in net/core/dev.c)
+
+ALL CHECKS PASSED (src)
