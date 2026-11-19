@@ -42,7 +42,11 @@ Or locally on Linux/WSL (normal user, ~25 GB free): `DRY_RUN=1 VALIDATE_PATCHES=
 - **After the build:** image exists and is >8 MB (+ SHA256); the manifest lists the above and kernel 6.18; the rootfs has fw4's
   hotplug script (queued version), fw4 with bridge flowtable support and the lifecycle hardening, `nf_conntrack_bridge.ko`,
   `/usr/sbin/vsftpd` and the temp-status rpcd script.
-- Any failure prints `CHECKS FAILED - do not flash` and exits non-zero.
+- **On the prepared kernel source** (dry run after `target/linux/prepare`, and again after the full build): the WED v2 WDMA
+  `RESV_BUFF` is `0x80`, the MT7986 arch timer is `12986200` Hz, and the bridge-offload kernel patch is applied. These are
+  read from the source tree, so they hold whether a fix comes from our patch set or from a stable kernel release.
+- Any failure prints `CHECKS FAILED - do not flash`, exits non-zero and fails the workflow job (the check steps run with
+  `shell: bash`, i.e. `pipefail`, so `tee` can no longer hide the exit code).
 
 ## What no automated check can tell you
 Whether the image **boots and offloads on your router.** Before flashing:

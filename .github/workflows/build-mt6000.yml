@@ -85,6 +85,7 @@ jobs:
 
       - name: Pre-build checks
         working-directory: openwrt
+        shell: bash   # adds -o pipefail, so a failing check fails the job (plain "run" would hide check.sh's exit code behind tee)
         run: bash ../bundle/check.sh pre "$PWD" | tee ../pre-check.log
 
       - name: Validate patches apply (host tools, firewall4, kernel)
@@ -102,6 +103,12 @@ jobs:
           grep -hE 'with fuzz|FUZZ' ../fw4-prepare.log ../kernel-prepare.log | sort | uniq -c | sort -rn | head -n 30 || true
           echo "Patch validation passed."
 
+      - name: Kernel source checks (prepared tree)
+        if: ${{ inputs.dry_run }}
+        working-directory: openwrt
+        shell: bash
+        run: bash ../bundle/check.sh src "$PWD" | tee ../src-check.log
+
       - name: Download sources
         if: ${{ !inputs.dry_run }}
         working-directory: openwrt
@@ -117,6 +124,7 @@ jobs:
       - name: Post-build checks
         if: ${{ !inputs.dry_run }}
         working-directory: openwrt
+        shell: bash
         run: bash ../bundle/check.sh post "$PWD" | tee ../post-check.log
 
       - name: Collect output
@@ -148,6 +156,7 @@ jobs:
             tools-install.log
             fw4-prepare.log
             kernel-prepare.log
+            src-check.log
             openwrt/.config
           if-no-files-found: ignore
 
@@ -155,7 +164,7 @@ jobs:
         if: ${{ always() }}
         run: |
           rm -rf /tmp/ci-logs && mkdir -p /tmp/ci-logs
-          for f in pre-check.log tools-install.log fw4-prepare.log kernel-prepare.log post-check.log; do
+          for f in pre-check.log tools-install.log fw4-prepare.log kernel-prepare.log src-check.log post-check.log; do
             if [ -f "$f" ]; then tail -n 2000 "$f" > "/tmp/ci-logs/$f"; fi
           done
           if [ -f build.log ]; then

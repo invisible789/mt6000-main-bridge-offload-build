@@ -15,6 +15,18 @@ skip() { echo "  skip  $*"; }
 chk()  { local d="$1"; shift; if "$@" >/dev/null 2>&1; then ok "$d"; else bad "$d"; fi; }
 has_glob() { compgen -G "$1" >/dev/null; }
 
+# Checks against the PREPARED kernel source (after "make target/linux/prepare", or after a full build). This is what
+# actually proves a fix is in the kernel, whether it comes from our patch set or from a stable release.
+kernel_src_checks() {
+  local ksrc
+  ksrc=$(ls -d build_dir/target-*/linux-mediatek_filogic/linux-6.18.* 2>/dev/null | head -1)
+  if [ -z "$ksrc" ]; then bad "prepared kernel source not found (run target/linux/prepare first)"; return; fi
+  echo "[src] prepared kernel source ($ksrc)"
+  chk "mtk_wed: WED v2 WDMA RESV_BUFF is 0x80" grep -q 'MTK_WDMA_GLO_CFG_RESV_BUFF, 0x80' "$ksrc/drivers/net/ethernet/mediatek/mtk_wed.c"
+  chk "mt7986: arch timer clock-frequency is 12986200" grep -q 'clock-frequency = <12986200>' "$ksrc/arch/arm64/boot/dts/mediatek/mt7986a.dtsi"
+  chk "bridge offload patch applied (dev_fill_bridge_path in net/core/dev.c)" grep -q 'dev_fill_bridge_path' "$ksrc/net/core/dev.c"
+}
+
 case "$STAGE" in
 pre)
   echo "[pre] patch set is present in the source tree"
@@ -35,7 +47,12 @@ pre)
   chk "mtk_wed: free rings during detach" has_glob 'target/linux/generic/pending-6.18/793-03-*mtk_wed-free-up-rings-during-detach*'
   chk "mtk_wed: failed rx reset frees buffers once (799-01..03)" bash -c '[ "$(ls target/linux/generic/pending-6.18/799-0[123]-*mtk_wed* 2>/dev/null | wc -l)" = 3 ]'
   chk "mtk_wed: dma_unmap_single size fix" has_glob 'target/linux/generic/backport-6.18/*mtk_wed-Fix-dma_unmap_single-size*'
-  chk "mtk_wed: WED v2 WDMA RESV_BUFF increase" has_glob 'target/linux/generic/backport-6.18/*mtk_wed-increase-WED-v2-WDMA-RESV_BUFF*'
+  # The RESV_BUFF fix was a local backport until it landed in stable 6.18.62, when the backport was dropped. Accept either;
+  # the "src" stage then verifies the actual kernel source.
+  chk "mtk_wed: WED v2 WDMA RESV_BUFF increase (backport present, or kernel >= 6.18.62)" bash -c '
+    has_glob() { compgen -G "$1" >/dev/null; }
+    has_glob "target/linux/generic/backport-6.18/*mtk_wed-increase-WED-v2-WDMA-RESV_BUFF*" && exit 0
+    pl=$(sed -n "s/^LINUX_VERSION-6.18 = \.\([0-9]*\).*/\1/p" target/linux/generic/kernel-6.18); [ -n "$pl" ] && [ "$pl" -ge 62 ]'
   chk "mtk_eth_soc: PPE queries wireless driver for flow TID" has_glob 'target/linux/generic/pending-6.18/797-01-*query-the-wireless-driver*'
   chk "device profile glinet_gl-mt6000 exists" grep -q 'Device/glinet_gl-mt6000' target/linux/mediatek/image/filogic.mk
   chk "mt7986 WED offload firmware is a device package" grep -q 'mt7986-wo-firmware' target/linux/mediatek/image/filogic.mk
@@ -81,6 +98,7 @@ post)
   else
     bad "no manifest file found"
   fi
+  kernel_src_checks
   root=$(ls -d build_dir/target-*/root-mediatek 2>/dev/null | head -1)
   if [ -n "$root" ]; then
     echo "[post] rootfs contents ($root)"
@@ -96,8 +114,11 @@ post)
     skip "rootfs dir not found (not fatal; manifest checks above still apply)"
   fi
   ;;
+src)
+  kernel_src_checks
+  ;;
 *)
-  echo "usage: check.sh pre|post <openwrt-dir>"; exit 2 ;;
+  echo "usage: check.sh pre|post|src <openwrt-dir>"; exit 2 ;;
 esac
 
 echo
